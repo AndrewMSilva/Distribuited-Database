@@ -8,34 +8,34 @@ def Read(cmd):
     if(cmd[0] == 2):
     	DeleteFrom(cmd[1:])
 
-def TablePage():
+def MetadataPage():
 	try:
-		file = open('__pages__/tables.dat', 'rb')
+		file = open('__pages__/metadata.dat', 'rb')
 		file.close()
 		return True
 	except IOError:
-		if(CreatePage('tables')):
+		if(CreatePage('metadata')):
 			return True
 		else:
 			return False
 
 def CreateTable(cmd):
-	if(not TablePage()):
+	if(not MetadataPage()):
 		return
 	CreatePage(cmd[0])
 	values = []
-	for i in rang(1,len(cmd))
-		values.append(cmd[i][1])
-	CreateFrame('tables', cmd[1:])
+	for a in cmd[1:]:
+		values.append(a[0])
+		values.append(a[1])
+	CreateFrame('metadata', values)
 
 def InsertInto(cmd):
-	
 	CreateFrame(cmd[0], cmd[1:])
 
 def DeleteFrom(cmd):
 	pass
 
-def List(cmd):
+def List(cmd, pageName):
 	with open('page0.dat', 'rb') as file:
 	    byte = file.read(1)
 	    while byte != b'':
@@ -44,9 +44,9 @@ def List(cmd):
 
 # PAGES/FRAMES SECTION #
 
-def CreatePage(name):
+def CreatePage(pageName):
 	try:
-		file = open('__pages__/'+name+'.dat', 'wb')
+		file = open('__pages__/'+pageName+'.dat', 'wb')
 		pageLen = 8*1024 # 8KB
 		special = 4 # bytes do frame especial
 		# criando o header
@@ -71,7 +71,7 @@ def CreatePage(name):
 		file.close()
 		return True
 	except IOError:
-		print('Error creating '+name+'.dat')
+		print('Error creating '+pageName+'.dat')
 		return False
 
 def CreateFrame(pageName, values):
@@ -88,15 +88,16 @@ def CreateFrame(pageName, values):
 		file.seek(16) # posição de início do pd_upper
 		i = int.from_bytes(file.read(2), 'little') # lendo o ponteiro que indica onde colocar o próximo item
 		file.seek(16) # posição de início do pd_upper
-		file.write((i+4).to_bytes(2, 'litte')) # atualizando o ponteiro
+		file.write(int(i+4).to_bytes(2, 'little')) # atualizando o ponteiro
 		# criando o item
 		file.seek(i)
 		file.write(n.to_bytes(4,'little'))
+
 		# gerenciando pd_lower
 		file.seek(18) # posição de início do pd_lower
 		i = int.from_bytes(file.read(2), 'little') # lendo o ponteiro que indica onde colocar a próxima tupla
 		file.seek(18) # posição de início do pd_lower
-		file.write((i+4).to_bytes(2, 'litte')) # atualizando o ponteiro
+		file.write((i+4).to_bytes(2, 'little')) # atualizando o ponteiro
 		# criando a tupla
 		file.seek(i)
 		for a in values:
@@ -104,6 +105,7 @@ def CreateFrame(pageName, values):
 				file.write(a.encode())
 			else:
 				file.write(a.to_bytes(4, 'litte'))
+
 		# salvando e fechando
 		file.close()
 		return True
