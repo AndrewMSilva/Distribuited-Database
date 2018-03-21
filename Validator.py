@@ -11,7 +11,7 @@ def Read(cmd=False):
         elif(cmd[0:4] == 'list'):
             cmd = List(cmd[4:])
         elif(cmd == 'exit'):
-            return True
+            exit()
         else:
             print('Command not found:',cmd)
             return False
@@ -42,7 +42,7 @@ def CreateTable(cmd):
             for i in range(0,len(cmd)):
                 a = cmd[i].split(' ') # separando tags por espaço
                 a = list(filter(('').__ne__, a)) # eliminando espaços sobrando
-                if(len(a) < 2 or (a[0] != 'int' and a[0] != 'char' and a[0][0:7] != 'varchar')): # validando os tipos
+                if(len(a) < 2 or (a[1] != 'int' and a[1] != 'char' and a[1][0:7] != 'varchar')): # validando os tipos
                     e = True
                     break
                 attr.append(a)

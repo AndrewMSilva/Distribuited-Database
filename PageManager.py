@@ -8,38 +8,39 @@ def Read(cmd):
     if(cmd[0] == 2):
     	DeleteFrom(cmd[1:])
 
-def MetadataPage(name): #verifica se a página já existe
+def MetaPage(pageName): #verifica se a página já existe
 	try:
-		file = open('__pages__/'+name+'meta.dat', 'rb')
+		file = open('__pages__/'+pageName+'meta.dat', 'rb')
 		file.close()
 		return False
 	except IOError:
 		return True
 
 def CreateTable(cmd):
-	if(not MetadataPage(cmd[0])): #se já existe n cria denovo e retorna nada
-		print("Tabela "+cmd[0]+" já existente.")
+	if(not MetaPage(cmd[0])): #se já existe n cria denovo e retorna nada
+		print("Table already exists: "+cmd[0])
 		return
 	values = []
 	for a in cmd[1:]: #pega os atributos do comando
 		v = []
-		if(a[0] == 'int'): #caso o atributo seja inteiro
+		if(a[1] == 'int'): #caso o atributo seja inteiro
 			v.append(1)
 			v.append(4) #tamanho fixo, mas será desconsiderado
 			v.append(len(a[1])) #tamanho do nome do campo
 			v.append(a[1]) #nome do campo
-		elif(a[0:4] == 'char'): #caso seja char
+		elif(a[1:4] == 'char'): #caso seja char
 			v.append(2) 
-			v.append(int((a[0].split('[')[1].split(']'))[0])) #tamanho do char
-			v.append(len(a[1]))#tamanho do nome do campo
-			v.append(a[1])#nome do campo
+			v.append(int((a[1].split('(')[1].split(')'))[0])) #tamanho do char
+			v.append(len(a[0]))#tamanho do nome do campo
+			v.append(a[0])#nome do campo
 		else: #caso seja varchar
 			v.append(3)
-			v.append(int((a[0].split('[')[1].split(']'))[0])) #tamanho do char
-			v.append(len(a[1])) #tamanho do nome do campo
-			v.append(a[1]) #nome do campo
+			v.append(int((a[1].split('(')[1].split(')'))[0])) #tamanho do char
+			v.append(len(a[0])) #tamanho do nome do campo
+			v.append(a[0]) #nome do campo
 		values.append(v)
 	CreateMetaPage(cmd[0],values)
+	CreatePage(cmd[0],0)
 
 def InsertInto(cmd):
 	CreateFrame(cmd[0], cmd[1:])
@@ -129,7 +130,7 @@ def InsertInto(cmd): #ainda não existe eauhhaehauehuea, mas verifica se a tabel
 		file = open('__pages__/'+cmd[0]+'meta.dat', 'rb')
 		return
 	except IOError:
-		print("\nTabela "+cmd[0]+" não encontrada.")
+		print("\nTable not found: "+cmd[0])
 
 	
 	return
@@ -150,7 +151,7 @@ def CreateMetaPage(pageName,attr): # [[type,typeLen,nameLen,name],...] | cria a 
 		print('Error creating '+pageName+'meta.dat') #não deu pra criar a página
 		return False
 
-def getMeta(pageName): #pegar os atributos da tabela
+def GetMeta(pageName): #pegar os atributos da tabela
 	try:
 		file = open('__pages__/'+pageName+'meta.dat', 'rb')
 		attr = []
