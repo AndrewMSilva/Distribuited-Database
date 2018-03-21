@@ -14,11 +14,14 @@ import PageManager
 print('\nWelcome to best db on universe! Enjoy it xD')
 print('Based on Postgres 8.0')
 while(True):
-	cmd = "create table cliente (int id PK, varchar[30] nome)"
+	PageManager.getMeta('clinte')
+	cm1 = "insert into clinte('batata','banana')"
+	cm1 = "create table clinte (int id PK, varchar[30] nome)"
+	cm1 = "create table clinte (int id PK, varchar[30] nome)"
 	# cmd = input('>>> ')
-	cmd = Validator.Read(cmd) # valida o comando
-	if(isinstance(cmd,list)): # verifica se retornou uma lista
-		PageManager.Read(cmd) # executa o comando
+	cm1 = Validator.Read(cm1) # valida o comando
+	if(isinstance(cm1,list)): # verifica se retornou uma lista
+		PageManager.Read(cm1) # executa o comando
 		break # usar apenas para testar um comando específico como parâmetro
 	elif(cmd): # se não for uma lista mas o resultado for True, o programa vai fechar (usado para o comando exit)
 		break

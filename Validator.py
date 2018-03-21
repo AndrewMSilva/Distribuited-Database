@@ -66,7 +66,7 @@ def InsertInto(cmd):
             status = 0
             i = j
         elif(status == 0 and (cmd[j] == ' ' or cmd[j+1] == '(')): # procurando onde termina o nome da tabela
-            attr[1] = cmd[i:j]
+            attr[1] = cmd[i:j+1]
             status = 1
         elif(status == 1 and (cmd[j] == '(' or cmd[j-1] == '(')): # procurando onde começa os argumentos
             i = j+1
@@ -74,7 +74,7 @@ def InsertInto(cmd):
         elif(status == 2):
             cmd = cmd[j:len(cmd)-1].split(',') # separando os argumentos pela vírgula
             for i in range(0,len(cmd)):
-                a = cmd[i].split('"') # separando pelas aspas pra conferir o tipo
+                a = cmd[i].split("'") # separando pelas aspas pra conferir o tipo
                 if(len(a) == 1):
                     values.append(int(cmd[i]))
                 else:

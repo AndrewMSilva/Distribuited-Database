@@ -8,26 +8,38 @@ def Read(cmd):
     if(cmd[0] == 2):
     	DeleteFrom(cmd[1:])
 
-def MetadataPage():
+def MetadataPage(name):
 	try:
-		file = open('__pages__/metadata.dat', 'rb')
+		file = open('__pages__/'+name+'meta.dat', 'rb')
 		file.close()
-		return True
+		return False
 	except IOError:
-		if(CreatePage('metadata')):
-			return True
-		else:
-			return False
+		return True
 
 def CreateTable(cmd):
-	if(not MetadataPage()):
+	if(not MetadataPage(cmd[0])):
+		print("Tabela "+cmd[0]+" já existente.")
 		return
-	CreatePage(cmd[0])
 	values = []
 	for a in cmd[1:]:
-		values.append(a[0])
-		values.append(a[1])
-	CreateFrame('metadata', values)
+		v = []
+		if(a[0] == 'int'):
+			v.append(1)
+			v.append(4)
+			v.append(len(a[1]))
+			v.append(a[1])
+		elif(a[0:4] == 'char'):
+			v.append(2)
+			v.append(int((a[0].split('[')[1].split(']'))[0])) #tamanho do char
+			v.append(len(a[1]))
+			v.append(a[1])
+		else:
+			v.append(3)
+			v.append(int((a[0].split('[')[1].split(']'))[0])) #tamanho do char
+			v.append(len(a[1]))
+			v.append(a[1])
+		values.append(v)
+	CreateMetaPage(cmd[0],values)
 
 def InsertInto(cmd):
 	CreateFrame(cmd[0], cmd[1:])
@@ -44,26 +56,25 @@ def List(cmd, pageName):
 
 # PAGES/FRAMES SECTION #
 
-def CreatePage(pageName):
+def CreatePage(pageName,offset):
 	try:
-		file = open('__pages__/'+pageName+'.dat', 'wb')
+		file = open('__pages__/'+pageName+str(offset)+'.dat', 'wb')
 		pageLen = 8*1024 # 8KB
 		special = 4 # bytes do frame especial
+		headerBytes = 12
 		# criando o header
-		pd_lsn = pageLen - special - 1 # LSN: próximo byte após o último byte do registro xlog para a última alteração nesta página
 		pd_tli = 0 # TLI da última mudança
-		pd_lower = pageLen - special - 1 # Offset para começar o espaço livre
-		pd_upper = 20 # Offset ao fim do espaço livre
+		pd_lower = headerBytes # Offset para começar o espaço livre
+		pd_upper = pageLen - special - 1 # Offset ao fim do espaço livre
 		pd_special = pageLen - special # Deslocamento para o início do espaço especial
-		pd_pagesize_version = 8 # Tamanho da página
-		file.write(pd_lsn.to_bytes(8,'big'))
+		pd_tlist = 0
 		file.write(pd_tli.to_bytes(4,'big'))
 		file.write(pd_lower.to_bytes(2,'little'))
 		file.write(pd_upper.to_bytes(2,'little'))
 		file.write(pd_special.to_bytes(2,'little'))
-		file.write(pd_pagesize_version.to_bytes(2,'little'))
+		file.write(pd_tlist.to_bytes(2,'little'))
 		# inicializando espaços vazios
-		free = pageLen - 20 - special # bytes livres
+		free = pageLen - headerBytes - special # bytes livres
 		file.write(bytes(free))
 		# alocando frame especial
 		file.write(bytes(special))
@@ -71,7 +82,7 @@ def CreatePage(pageName):
 		file.close()
 		return True
 	except IOError:
-		print('Error creating '+pageName+'.dat')
+		print('Error creating '+pageName+str(offset)+'.dat')
 		return False
 
 def CreateFrame(pageName, values):
@@ -113,17 +124,53 @@ def CreateFrame(pageName, values):
 		print('Error opening '+pageName+'.dat')
 		return False
 
+def InsertInto(cmd):
+	try:
+		file = open('__pages__/'+cmd[0]+'meta.dat', 'rb')
+		return
+	except IOError:
+		print("\nTabela "+cmd[0]+" não encontrada.")
 
-class Table: # classe apenas experimental
-	attr = []	# [[name,numBytes]]
-	PK = None	# attr[PK] == PK (usável se for usar árvore binária para os índices)
+	
+	return
 
-	def __init__(self, cmd):
-		self.name = cmd[0]
-		for i in range(1,len(cmd)):
-			self.attr.append([cmd[i][1]]) # nome
-			if(cmd[i][0] == 'int'):
-				self.attr[i-1].append(4) # bytes do int
-			else:
-				a = cmd[i][0].split('(')
-				self.attr[i-1].append(int(a[1][0:(len(a[1])-1)])) # bytes do char/varchar (o número entre parênteses)
+def CreateMetaPage(pageName,attr): # [[type,typeLen,nameLen,name],...]
+	try:
+		file = open('__pages__/'+pageName+'meta.dat', 'wb')
+		pageLen = 8*1024 # 8KB
+		special = 4 # bytes do frame especial
+		headerBytes = 12
+		# criando o header
+		for a in attr:
+			file.write(a[0].to_bytes(1,'little'))
+			file.write(a[1].to_bytes(1,'little'))
+			file.write(a[2].to_bytes(1,'little'))
+			file.write(a[3].encode())
+		# salvando e fechando
+		file.close()
+		return True
+	except IOError:
+		print('Error creating '+pageName+'.dat')
+		return False
+
+def getMeta(pageName):
+	try:
+		file = open('__pages__/'+pageName+'meta.dat', 'rb')
+		attr = []
+		a = int.from_bytes(file.read(1), byteorder='little')
+		while(a):
+			v = []			
+			v.append(a)
+			a = int.from_bytes(file.read(1), byteorder='little')
+			v.append(a)
+			a = int.from_bytes(file.read(1), byteorder='little')
+			a = file.read(a).decode()
+			v.append(a)
+			attr.append(v)
+			a = int.from_bytes(file.read(1), byteorder='little')
+		print(attr)
+		file.close()
+		return attr
+	except IOError:
+		print('Error opening '+pageName+'.dat')
+		return False
