@@ -43,7 +43,18 @@ def CreateTable(cmd):
 	CreatePage(cmd[0],0)
 
 def InsertInto(cmd):
-	CreateFrame(cmd[0], cmd[1:])
+	if(MetaPage(cmd[0])): #se já existe n cria denovo e retorna nada
+		print("Table not found: "+cmd[0])
+		return
+	# AQUI TEMOS QUE VERIFICAR AS PÁGINAS COM ESPAÇO PRA INSERIR A TUPLA
+	# EU "CALCULO" O TAMNHO DA TUPLA DENTRO DA FUNÇÃO, ENTÃO TERÍAMOS QUE 
+	# CALCULAR AQUI E MANDAR PRO PARÂMETRO
+
+	#i = 0
+	#while():
+	#	if(PageExist(cmd[0], i)):
+
+	CreateFrame(cmd[0], 0, cmd[1:])
 
 def DeleteFrom(cmd):
 	pass
@@ -57,7 +68,15 @@ def List(cmd, pageName):
 
 # PAGES/FRAMES SECTION #
 
-def CreatePage(pageName,offset):
+def PageExist(pageName, offset):
+	try:
+		file = open('__pages__/'+pageName+str(offset)+'.dat', 'rb')
+		file.close()
+		return True
+	except IOError:
+		return False
+
+def CreatePage(pageName, offset):
 	try:
 		file = open('__pages__/'+pageName+str(offset)+'.dat', 'wb')
 		pageLen = 8*1024 # 8KB
@@ -86,37 +105,52 @@ def CreatePage(pageName,offset):
 		print('Error creating '+pageName+str(offset)+'.dat')
 		return False
 
-def CreateFrame(pageName, values):
+def CreateFrame(pageName, offset, values):
 	try:
-		file = open('__pages__/'+pageName+'.dat', 'r+b')
+		file = open('__pages__/'+pageName+str(offset)+'.dat', 'r+b')
 		# calculando somatório de bytes
 		n = 0
-		for a in values:
-			if(isinstance(a, str)):
-				n += len(a)
+		meta = GetMeta(pageName)
+		for i in range(0,len(meta)):
+			if(meta[i][0] == 1 and isinstance(values[0][i], int)):
+				n += meta[i][1]
+			elif(meta[i][0] == 2 and isinstance(values[0][i], str)):
+				n += meta[i][1]
+			elif(meta[i][0] == 3 and isinstance(values[0][i], str)):
+				n += len(values[0][i])
 			else:
-				n += 4
-		# gerenciando pd_upper
-		file.seek(16) # posição de início do pd_upper
+				print('Invalid insertion string')
+				return
+		# --------------------------------
+		# CONFIGURAR O RID E OS PONTEIROS E SOMAR NO N
+		# --------------------------------
+		# gerenciando pd_lower
+		file.seek(6) # posição de início do pd_lower
 		i = int.from_bytes(file.read(2), 'little') # lendo o ponteiro que indica onde colocar o próximo item
-		file.seek(16) # posição de início do pd_upper
+		file.seek(6) # posição de início do pd_lower
 		file.write(int(i+4).to_bytes(2, 'little')) # atualizando o ponteiro
 		# criando o item
 		file.seek(i)
 		file.write(n.to_bytes(4,'little'))
 
-		# gerenciando pd_lower
-		file.seek(18) # posição de início do pd_lower
+		# gerenciando pd_upper
+		file.seek(8) # posição de início do pd_upper
 		i = int.from_bytes(file.read(2), 'little') # lendo o ponteiro que indica onde colocar a próxima tupla
-		file.seek(18) # posição de início do pd_lower
-		file.write((i+4).to_bytes(2, 'little')) # atualizando o ponteiro
+		file.seek(8) # posição de início do pd_upper
+		file.write((i-n).to_bytes(2, 'little')) # atualizando o ponteiro
 		# criando a tupla
+		# --------------------------------
+		# CRIAR O RID E OS PONTEIROS
+		# --------------------------------
 		file.seek(i)
-		for a in values:
-			if(isinstance(a, str)):
-				file.write(a.encode())
+		for j in range(0,len(meta)):
+			if(meta[j][0] == 1): # se for int
+				file.write(values[0][j].to_bytes(4, 'little'))
+			elif(meta[j][0] == 2): # se for char
+				file.write(values[0][j].encode())
+				# file.seek() # NÃO SEI BEM COMO FAREMOS PRA DAR O ESPAÇO RESTANTE DO CHAR E SABER IGORAR ELE QUANDO PEGAR O VALOR
 			else:
-				file.write(a.to_bytes(4, 'litte'))
+				file.write(values[0][j].encode())
 
 		# salvando e fechando
 		file.close()
@@ -125,15 +159,6 @@ def CreateFrame(pageName, values):
 		print('Error opening '+pageName+'.dat')
 		return False
 
-def InsertInto(cmd): #ainda não existe eauhhaehauehuea, mas verifica se a tabela existe pra inserir
-	try:
-		file = open('__pages__/'+cmd[0]+'meta.dat', 'rb')
-		return
-	except IOError:
-		print("\nTable not found: "+cmd[0])
-
-	
-	return
 
 def CreateMetaPage(pageName,attr): # [[type,typeLen,nameLen,name],...] | cria a página com os campos da tupla
 	try:
@@ -166,7 +191,6 @@ def GetMeta(pageName): #pegar os atributos da tabela
 			v.append(a)
 			attr.append(v)
 			a = int.from_bytes(file.read(1), byteorder='little') #nome do campo
-		print(attr) #só teste msm
 		file.close()
 		return attr
 	except IOError:
