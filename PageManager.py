@@ -112,14 +112,14 @@ def CreateFrame(pageName, offset, values):
 		n = 0
 		meta = GetMeta(pageName)
 		for i in range(0,len(meta)):
-			if(meta[i][0] == 1 and isinstance(values[0][i], int)):
+			if(meta[i][0] == 1 and isinstance(values[0][i], int)): # se ambos int
 				n += meta[i][1]
-			elif(meta[i][0] == 2 and isinstance(values[0][i], str)):
+			elif(meta[i][0] == 2 and isinstance(values[0][i], str)): # se char e str
 				n += meta[i][1]
-			elif(meta[i][0] == 3 and isinstance(values[0][i], str)):
+			elif(meta[i][0] == 3 and isinstance(values[0][i], str)): # se varchar e str
 				n += len(values[0][i])
 			else:
-				print('Invalid insertion string')
+				print('Entry and type do not match: check the sequence') # a entrada e o tipo não combinam
 				return
 		# --------------------------------
 		# CONFIGURAR O RID E OS PONTEIROS E SOMAR NO N
@@ -149,7 +149,7 @@ def CreateFrame(pageName, offset, values):
 			elif(meta[j][0] == 2): # se for char
 				file.write(values[0][j].encode())
 				# file.seek() # NÃO SEI BEM COMO FAREMOS PRA DAR O ESPAÇO RESTANTE DO CHAR E SABER IGORAR ELE QUANDO PEGAR O VALOR
-			else:
+			else: # se for varchar
 				file.write(values[0][j].encode())
 
 		# salvando e fechando
