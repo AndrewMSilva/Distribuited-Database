@@ -8,8 +8,8 @@ def Read(cmd=False):
             cmd = InsertInto(cmd[11:])
         elif(cmd[0:11] == 'delete from'):
             cmd = DeleteFrom(cmd[11:])
-        elif(cmd[0:4] == 'list'):
-            cmd = List(cmd[4:])
+        elif(cmd[0:6] == 'select'):
+            cmd = Select(cmd[6:])
         elif(cmd == 'exit'):
             exit()
         else:
@@ -109,15 +109,31 @@ def DeleteFrom(cmd):
         return False
     return attr
 
-def List(cmd):
+def Select(cmd):
     if(cmd[0] != ' '):
         return False
     i = 1
     attr = [3,False]
+    status = 0
     for j in range(i,len(cmd)):
-        if(cmd[j] != ' '): # procurando onde começa o nome da tabela
-            attr[1] = cmd[i:]
-            attr[1].replace(" ", "") # removendo espaços
+        if(status == 0 and cmd[j] != ' '): # procurando onde começam os campos
+            i = j
+            status = 1
+        if(status == 1 and cmd[j-5:j-1] == 'from'): #procurando o 'from'
+            campos = []
+            c = cmd[i:j-5]
+            c = c.split(',')
+            for a in c:
+                a = a.replace(" ", "") # removendo espaços
+                campos.append(a)
+            attr.append(campos)
+            status = 2
+        elif(status == 2 and cmd[j] == ' '): # procurando onde termina o nome da tabela
+            attr[1] = cmd[i:j+1]
+            status = 1
+        elif(status == 3 and (cmd[j] == '(' or cmd[j-1] == '(')): # procurando onde começa os argumentos
+            i = j+1
+            status = 2
     if(not attr[0]):
         return False
     print(attr)
