@@ -119,22 +119,20 @@ def Select(cmd):
         if(status == 0 and cmd[j] != ' '): # procurando onde começam os campos
             i = j
             status = 1
-        if(status == 1 and cmd[j-5:j-1] == 'from'): #procurando o 'from'
-            campos = []
+        elif(status == 1 and cmd[j-4:j] == 'from'): #procurando o 'from'
             c = cmd[i:j-5]
             c = c.split(',')
-            for a in c:
-                a = a.replace(" ", "") # removendo espaços
-                campos.append(a)
-            attr.append(campos)
+            for i in range(0,len(c)):
+                c[i] = c[i].replace(" ", "") # removendo espaços
+            attr.append(c)
             status = 2
-        elif(status == 2 and cmd[j] == ' '): # procurando onde termina o nome da tabela
+            print(cmd[j])
+        elif(status == 2 and cmd[j] != ' '): # procurando onde começa o nome da tabela
+            status = 3
+            i = j
+        elif(status == 3 and (cmd[j] == ' ' or (j+1) == len(cmd))): # procurando onde termina o nome da tabela
             attr[1] = cmd[i:j+1]
-            status = 1
-        elif(status == 3 and (cmd[j] == '(' or cmd[j-1] == '(')): # procurando onde começa os argumentos
-            i = j+1
-            status = 2
+            status = 4
     if(not attr[0]):
         return False
-    print(attr)
     return attr

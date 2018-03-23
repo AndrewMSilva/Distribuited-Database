@@ -16,7 +16,7 @@ print('Based on Postgres 8.0')
 while(True):
 	cmd = "insert into cliente(1, 'Antônio')"
 	cmd = "create table cliente (id int PK, nome varchar(30))"
-	cmd = "select    nome ,  id  from cliente"
+	cmd = "select    *  from cliente  "
 	#cmd = input('>>> ')
 	cmd = Validator.Read(cmd) # valida o comando
 	if(isinstance(cmd,list)): # verifica se retornou uma lista
