@@ -8,10 +8,10 @@ def Read(cmd=False):
             cmd = InsertInto(cmd[11:])
         elif(cmd[0:11] == 'delete from'):
             cmd = DeleteFrom(cmd[11:])
-        elif(cmd[0:4] == 'list'):
-            cmd = List(cmd[4:])
+        elif(cmd[0:6] == 'select'):
+            cmd = Select(cmd[6:])
         elif(cmd == 'exit'):
-            return True
+            exit()
         else:
             print('Command not found:',cmd)
             return False
@@ -42,7 +42,7 @@ def CreateTable(cmd):
             for i in range(0,len(cmd)):
                 a = cmd[i].split(' ') # separando tags por espaço
                 a = list(filter(('').__ne__, a)) # eliminando espaços sobrando
-                if(len(a) < 2 or (a[0] != 'int' and a[0] != 'char' and a[0][0:7] != 'varchar')): # validando os tipos
+                if(len(a) < 2 or (a[1] != 'int' and a[1][0:4] != 'char' and a[1][0:7] != 'varchar')): # validando os tipos
                     e = True
                     break
                 attr.append(a)
@@ -109,16 +109,30 @@ def DeleteFrom(cmd):
         return False
     return attr
 
-def List(cmd):
+def Select(cmd):
     if(cmd[0] != ' '):
         return False
     i = 1
     attr = [3,False]
+    status = 0
     for j in range(i,len(cmd)):
-        if(cmd[j] != ' '): # procurando onde começa o nome da tabela
-            attr[1] = cmd[i:]
-            attr[1].replace(" ", "") # removendo espaços
+        if(status == 0 and cmd[j] != ' '): # procurando onde começam os campos
+            i = j
+            status = 1
+        elif(status == 1 and cmd[j-4:j] == 'from'): #procurando o 'from'
+            c = cmd[i:j-5]
+            c = c.split(',')
+            for i in range(0,len(c)):
+                c[i] = c[i].replace(" ", "") # removendo espaços
+            attr.append(c)
+            status = 2
+            print(cmd[j])
+        elif(status == 2 and cmd[j] != ' '): # procurando onde começa o nome da tabela
+            status = 3
+            i = j
+        elif(status == 3 and (cmd[j] == ' ' or (j+1) == len(cmd))): # procurando onde termina o nome da tabela
+            attr[1] = cmd[i:j+1]
+            status = 4
     if(not attr[0]):
         return False
-    print(attr)
-    return attr
+    return attr # [3, tableName, [campos...]]

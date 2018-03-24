@@ -7,45 +7,54 @@ def Read(cmd):
     	InsertInto(cmd[1:])
     if(cmd[0] == 2):
     	DeleteFrom(cmd[1:])
-
-def MetadataPage(name): #verifica se a página já existe
-	try:
-		file = open('__pages__/'+name+'meta.dat', 'rb')
-		file.close()
-		return False
-	except IOError:
-		return True
+    if(cmd[0] == 3):
+    	Select(cmd[1:])
 
 def CreateTable(cmd):
-	if(not MetadataPage(cmd[0])): #se já existe n cria denovo e retorna nada
-		print("Tabela "+cmd[0]+" já existente.")
+	if(PageExist(cmd[0]+'meta')): #se já existe n cria denovo e retorna nada
+		print("Table already exists: "+cmd[0])
 		return
 	values = []
 	for a in cmd[1:]: #pega os atributos do comando
 		v = []
-		if(a[0] == 'int'): #caso o atributo seja inteiro
+		if(a[1] == 'int'): #caso o atributo seja inteiro
 			v.append(1)
 			v.append(4) #tamanho fixo, mas será desconsiderado
 			v.append(len(a[1])) #tamanho do nome do campo
 			v.append(a[1]) #nome do campo
-		elif(a[0:4] == 'char'): #caso seja char
-			v.append(2) 
-			v.append(int((a[0].split('[')[1].split(']'))[0])) #tamanho do char
-			v.append(len(a[1]))#tamanho do nome do campo
-			v.append(a[1])#nome do campo
+		elif(a[1][0:4] == 'char'): #caso seja char
+			v.append(2)
+			v.append(int((a[1].split('(')[1].split(')'))[0])) #tamanho do char
+			v.append(len(a[0]))#tamanho do nome do campo
+			v.append(a[0])#nome do campo
 		else: #caso seja varchar
 			v.append(3)
-			v.append(int((a[0].split('[')[1].split(']'))[0])) #tamanho do char
-			v.append(len(a[1])) #tamanho do nome do campo
-			v.append(a[1]) #nome do campo
+			v.append(int((a[1].split('(')[1].split(')'))[0])) #tamanho do char
+			v.append(len(a[0])) #tamanho do nome do campo
+			v.append(a[0]) #nome do campo
 		values.append(v)
 	CreateMetaPage(cmd[0],values)
+	CreatePage(cmd[0],0)
 
 def InsertInto(cmd):
-	CreateFrame(cmd[0], cmd[1:])
+	if(not PageExist(cmd[0], 0)): #se já existe n cria denovo e retorna nada
+		print("Table not found: "+cmd[0])
+		return
+
+	for values in cmd[1:]:
+		CreateFrame(cmd[0], 0, values)
 
 def DeleteFrom(cmd):
 	pass
+
+def Select(cmd):
+    offset = 0
+    s = []
+    while(PageExist(cmd[0],offset)):
+        s = s + GetFrames(cmd[0],offset)
+        offset += 1
+    print(s)
+    return
 
 def List(cmd, pageName):
 	with open('page0.dat', 'rb') as file:
@@ -56,9 +65,17 @@ def List(cmd, pageName):
 
 # PAGES/FRAMES SECTION #
 
-def CreatePage(pageName,offset):
+def PageExist(pageName, offset = ''):
 	try:
-		file = open('__pages__/'+pageName+str(offset)+'.dat', 'wb')
+		file = open('__pages__/'+pageName+str(offset)+'.dat', 'rb')
+		file.close()
+		return True
+	except IOError:
+		return False
+
+def CreatePage(pageName, offset):
+	try:
+		file = open('__pages__/'+pageName+str(offset)+'.dat', 'w+b')
 		pageLen = 8*1024 # 8KB
 		special = 4 # bytes do frame especial
 		headerBytes = 12
@@ -85,64 +102,95 @@ def CreatePage(pageName,offset):
 		print('Error creating '+pageName+str(offset)+'.dat')
 		return False
 
-def CreateFrame(pageName, values):
+def CreateFrame(pageName, offset, values): # n = o somatório dos bytes da tupla
 	try:
-		file = open('__pages__/'+pageName+'.dat', 'r+b')
-		# calculando somatório de bytes
-		n = 0
-		for a in values:
-			if(isinstance(a, str)):
-				n += len(a)
+		file = open('__pages__/'+pageName+str(offset)+'.dat', 'r+b')
+		# calculando somatório de bytes da tupla e verificando os tipos
+		tupleLen = 0
+		meta = GetMeta(pageName)
+		for i in range(0,len(meta)):
+			if(meta[i][0] == 1 and isinstance(values[i], int)): # se ambos int
+				tupleLen += meta[i][1]
+			elif(meta[i][0] == 2 and isinstance(values[i], str)): # se char e str
+				tupleLen += meta[i][1]
+			elif(meta[i][0] == 3 and isinstance(values[i], str)): # se varchar e str
+				tupleLen += len(values[i])
 			else:
-				n += 4
-		# gerenciando pd_upper
-		file.seek(16) # posição de início do pd_upper
-		i = int.from_bytes(file.read(2), 'little') # lendo o ponteiro que indica onde colocar o próximo item
-		file.seek(16) # posição de início do pd_upper
-		file.write(int(i+4).to_bytes(2, 'little')) # atualizando o ponteiro
-		# criando o item
-		file.seek(i)
-		file.write(n.to_bytes(4,'little'))
+				print('Entry and type do not match: check the sequence') # a entrada e o tipo não combinam
+				file.close()
+				return False
+		print(tupleLen)
+		# verificando se há espaço na página
+		file.seek(4, 0) # posição de início do pd_lower
+		pd_lower = int.from_bytes(file.read(2), 'little') # lendo o ponteiro que indica onde colocar o próximo item
+		file.seek(6, 0) # posição de início do pd_upper
+		pd_upper = int.from_bytes(file.read(2), 'little') # lendo o ponteiro que indica onde colocar a próxima tupla
+		itemLen = 3 + 2*len(values)
 
+		if((pd_upper - pd_lower) < (tupleLen + itemLen)): # se não há espaço
+			file.close()
+			if(PageExist(pageName, offset+1)): # se existe uma página seguinte
+				CreateFrame(pageName, offset+1, values) # tenta inserir na próxima página
+			else: # se não existe uma págica seguinte
+				CreatePage(pageName, offset+1) # cria uma nova página
+				CreateFrame(pageName, offset+1, values) # insere a tupla na nova página
+			return True
 		# gerenciando pd_lower
-		file.seek(18) # posição de início do pd_lower
-		i = int.from_bytes(file.read(2), 'little') # lendo o ponteiro que indica onde colocar a próxima tupla
-		file.seek(18) # posição de início do pd_lower
-		file.write((i+4).to_bytes(2, 'little')) # atualizando o ponteiro
+		file.seek(4, 0) # posição de início do pd_lower
+		file.write((pd_lower+itemLen).to_bytes(2, 'little')) # atualizando o ponteiro
+
+        # gerenciando pd_upper
+		file.seek(6, 0) # posição de início do pd_upper
+		file.write((pd_upper-tupleLen).to_bytes(2, 'little')) # atualizando o ponteiro
+
+		# criando o item
+		file.seek(pd_lower, 0)
+		pointer = pd_upper-tupleLen # ponteiro para a tupla
+		status = 1 # estado da tupla (1=sendo usado, 0=livre)
+		file.write(pointer.to_bytes(2, 'little'))
+		file.write(status.to_bytes(1, 'little'))
+		for i in range(0,len(meta)):
+			if(meta[i][0] == 1): # se for int
+				file.write(meta[i][1].to_bytes(2, 'little'))
+			else: # se não for seguinte
+				file.write(len(values[i]).to_bytes(2, 'little'))
+
 		# criando a tupla
-		file.seek(i)
-		for a in values:
-			if(isinstance(a, str)):
-				file.write(a.encode())
-			else:
-				file.write(a.to_bytes(4, 'litte'))
+		file.seek(pointer, 0)
+		for i in range(0,len(meta)):
+			if(meta[i][0] == 1): # se for int
+				file.write(values[i].to_bytes(4, 'little'))
+			elif(meta[i][0] == 2): # se for char
+				b = len(values[i])
+				for a in range(b,meta[i][1]):
+					values[i] += "0"
+				print("batata é" + values[i])
+				file.write(values[i].encode())
+				# file.seek() # NÃO SEI BEM COMO FAREMOS PRA DAR O ESPAÇO RESTANTE DO CHAR E SABER IGORAR ELE QUANDO PEGAR O VALOR
+			else: # se for varchar
+				file.write(values[i].encode())
 
 		# salvando e fechando
 		file.close()
 		return True
 	except IOError:
-		print('Error opening '+pageName+'.dat')
+		print('Error opening '+pageName+str(offset)+'.dat')
 		return False
 
-def InsertInto(cmd): #ainda não existe eauhhaehauehuea, mas verifica se a tabela existe pra inserir
-	try:
-		file = open('__pages__/'+cmd[0]+'meta.dat', 'rb')
-		return
-	except IOError:
-		print("\nTabela "+cmd[0]+" não encontrada.")
-
-	
-	return
 
 def CreateMetaPage(pageName,attr): # [[type,typeLen,nameLen,name],...] | cria a página com os campos da tupla
 	try:
 		file = open('__pages__/'+pageName+'meta.dat', 'wb')
 		# pega os atributos já verificados e insere um por vez
+		pageLen = 8*1024 # 8KB
+		metaLen = len(attr)
+		file.write(metaLen.to_bytes(1,'little')) # quantidade de atributos do meta
 		for a in attr:
 			file.write(a[0].to_bytes(1,'little')) #tipo do campo
 			file.write(a[1].to_bytes(1,'little')) #tamanho do campo
 			file.write(a[2].to_bytes(1,'little')) #tamanho do nome
 			file.write(a[3].encode()) #pra string
+		file.write(bytes(pageLen - metaLen))
 		# salvando e fechando
 		file.close()
 		return True
@@ -150,13 +198,14 @@ def CreateMetaPage(pageName,attr): # [[type,typeLen,nameLen,name],...] | cria a 
 		print('Error creating '+pageName+'meta.dat') #não deu pra criar a página
 		return False
 
-def getMeta(pageName): #pegar os atributos da tabela
+def GetMeta(pageName): #pegar os atributos da tabela
 	try:
 		file = open('__pages__/'+pageName+'meta.dat', 'rb')
 		attr = []
-		a = int.from_bytes(file.read(1), byteorder='little') #tipo do primeiro campo, se não existir retorna um vetor vazio
-		while(a):
-			v = []			
+		metaLen = int.from_bytes(file.read(1), byteorder='little') # tamanho do meta
+		for i in range(0, metaLen):
+			v = []
+			a = int.from_bytes(file.read(1), byteorder='little') #tipo do primeiro campo, se não existir retorna um vetor vazio
 			v.append(a)
 			a = int.from_bytes(file.read(1), byteorder='little') #tamanho do campo
 			v.append(a)
@@ -164,8 +213,34 @@ def getMeta(pageName): #pegar os atributos da tabela
 			a = file.read(a).decode()
 			v.append(a)
 			attr.append(v)
-			a = int.from_bytes(file.read(1), byteorder='little') #nome do campo
-		print(attr) #só teste msm
+		file.close()
+		return attr
+	except IOError:
+		print('Error opening '+pageName+'meta.dat') #página não existe
+		return False
+
+def GetFrames(pageName,offset):
+	try:
+		file = open('__pages__/'+pageName+str(offset)+'.dat', 'rb')
+		attr = []
+		meta = GetMeta(pageName)
+		meta = meta[0]
+		file.seek(4,0)
+		low = int.from_bytes(file.read(2),byteorder='little')
+		file.seek(12,0)
+		print(low)
+		exit()
+		while(file.tell() < low):
+			for i in range(0,low/(3+(2*meta))):
+				v = []
+				a = int.from_bytes(file.read(1), byteorder='little') #tipo do primeiro campo, se não existir retorna um vetor vazio
+				v.append(a)
+				a = int.from_bytes(file.read(1), byteorder='little') #tamanho do campo
+				v.append(a)
+				a = int.from_bytes(file.read(1), byteorder='little')#tamanho do nome do campo
+				a = file.read(a).decode()
+				v.append(a)
+				attr.append(v)
 		file.close()
 		return attr
 	except IOError:
