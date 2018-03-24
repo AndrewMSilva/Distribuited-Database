@@ -48,13 +48,14 @@ def DeleteFrom(cmd):
 	pass
 
 def Select(cmd):
-    offset = 0
-    s = []
-    while(PageExist(cmd[0],offset)):
-        s = s + GetFrames(cmd[0],offset)
-        offset += 1
-    print(s)
-    return
+	offset = 0
+	s = []
+	cmd[0] = cmd[0].split(' ')[0]
+	while(PageExist(cmd[0],offset)):
+		s = s + GetFrames(cmd[0],offset)
+		offset += 1
+	print(s)
+	return
 
 def List(cmd, pageName):
 	with open('page0.dat', 'rb') as file:
@@ -65,7 +66,7 @@ def List(cmd, pageName):
 
 # PAGES/FRAMES SECTION #
 
-def PageExist(pageName, offset = ''):
+def PageExist(pageName, offset = 0):
 	try:
 		file = open('__pages__/'+pageName+str(offset)+'.dat', 'rb')
 		file.close()
@@ -164,7 +165,6 @@ def CreateFrame(pageName, offset, values): # n = o somatório dos bytes da tupla
 				b = len(values[i])
 				for a in range(b,meta[i][1]):
 					values[i] += "0"
-				print("batata é" + values[i])
 				file.write(values[i].encode())
 				# file.seek() # NÃO SEI BEM COMO FAREMOS PRA DAR O ESPAÇO RESTANTE DO CHAR E SABER IGORAR ELE QUANDO PEGAR O VALOR
 			else: # se for varchar
@@ -203,6 +203,7 @@ def GetMeta(pageName): #pegar os atributos da tabela
 		file = open('__pages__/'+pageName+'meta.dat', 'rb')
 		attr = []
 		metaLen = int.from_bytes(file.read(1), byteorder='little') # tamanho do meta
+		attr.append(metaLen)
 		for i in range(0, metaLen):
 			v = []
 			a = int.from_bytes(file.read(1), byteorder='little') #tipo do primeiro campo, se não existir retorna um vetor vazio
@@ -224,24 +225,34 @@ def GetFrames(pageName,offset):
 		file = open('__pages__/'+pageName+str(offset)+'.dat', 'rb')
 		attr = []
 		meta = GetMeta(pageName)
-		meta = meta[0]
+		metalen = int(meta[0])
 		file.seek(4,0)
 		low = int.from_bytes(file.read(2),byteorder='little')
 		file.seek(12,0)
-		print(low)
-		exit()
 		while(file.tell() < low):
-			for i in range(0,low/(3+(2*meta))):
+			for i in range(0,int(low/(3+(2*metalen)))):
 				v = []
-				a = int.from_bytes(file.read(1), byteorder='little') #tipo do primeiro campo, se não existir retorna um vetor vazio
-				v.append(a)
-				a = int.from_bytes(file.read(1), byteorder='little') #tamanho do campo
-				v.append(a)
-				a = int.from_bytes(file.read(1), byteorder='little')#tamanho do nome do campo
-				a = file.read(a).decode()
-				v.append(a)
+				aux = []
+				aux.append(0)
+				pointer = int.from_bytes(file.read(2), byteorder='little') #ponteiro pra tupla
+				status = int.from_bytes(file.read(1), byteorder='little') #status
+				if(status == 0):
+					continue
+				for j in range(1,metalen+1):
+					aux.append(int.from_bytes(file.read(2), byteorder='little'))
+				file.seek(pointer,0)
+				for j in range(1,metalen+1):
+					if(meta[j][0] == 1): #lendo int
+						a = int.from_bytes(file.read(aux[j]), byteorder='little') #tamanho do campo
+						v.append(a)
+					else: #char e varchar PRECISA DO TOAST NISSO DPS
+						a = file.read(aux[j]+1).decode()
+						v.append(a)
 				attr.append(v)
+				file.seek(12+(3+(2*metalen))*(i+1),0)
 		file.close()
+		print(attr)
+		exit()
 		return attr
 	except IOError:
 		print('Error opening '+pageName+'meta.dat') #página não existe
