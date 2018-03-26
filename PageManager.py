@@ -3,12 +3,14 @@
 def Read(cmd):
     if(cmd[0] == 0):
     	CreateTable(cmd[1:])
-    if(cmd[0] == 1):
+    elif(cmd[0] == 1):
     	InsertInto(cmd[1:])
-    if(cmd[0] == 2):
+    elif(cmd[0] == 2):
     	DeleteFrom(cmd[1:])
-    if(cmd[0] == 3):
+    elif(cmd[0] == 3):
     	Select(cmd[1:])
+    elif(cmd[0] == 4):
+    	ShowTable(cmd[1:])
 
 def CreateTable(cmd):
 	if(PageExist(cmd[0]+'meta')): #se já existe n cria denovo e retorna nada
@@ -49,20 +51,25 @@ def DeleteFrom(cmd):
 
 def Select(cmd):
 	offset = 0
-	s = []
-	cmd[0] = cmd[0].split(' ')[0]
+	values = []
 	while(PageExist(cmd[0],offset)):
-		s = s + GetFrames(cmd[0],offset)
+		values = values + GetFrames(cmd[0],offset)
 		offset += 1
-	print(s)
+	print(values)
 	return
 
-def List(cmd, pageName):
-	with open('page0.dat', 'rb') as file:
-	    byte = file.read(1)
-	    while byte != b'':
-	        print(byte)
-	        byte = file.read(1)
+def ShowTable(cmd):
+	meta = GetMeta(cmd[0])
+	print(cmd[0]+' attributes:')
+	for a in meta[1:]:
+		s = a[2]+' '
+		if(a[0] == 1):
+			s += 'int'
+		elif(a[0] == 2):
+			s += 'char('+str(a[1])+')'
+		elif(a[0] == 3):
+			s += 'varchar('+str(a[1])+')'
+		print(s)
 
 # PAGES/FRAMES SECTION #
 
@@ -170,8 +177,8 @@ def CreateFrame(pageName, offset, values): # n = o somatório dos bytes da tupla
 				# file.seek() # NÃO SEI BEM COMO FAREMOS PRA DAR O ESPAÇO RESTANTE DO CHAR E SABER IGORAR ELE QUANDO PEGAR O VALOR
 			else: # se for varchar
 				file.write(values[i].encode())
-		
-		# atualizando tamanho da lista de itens
+
+		# atualizando tamanho da list	print(s)a de itens
 		file.seek(10, 0) # posição de início do tlist
 		tlist = 1 + int.from_bytes(file.read(2), byteorder='little') # tamanho atual da lista
 		file.seek(10, 0) # posição de início do tlist
@@ -261,8 +268,7 @@ def GetFrames(pageName,offset):
 				else: #char e varchar PRECISA DO TOAST NISSO DPS
 					aux.append(file.read(attrLen[i]).decode())
 			data.append(aux)
-		print(data)
-		exit()
+		data = list(reversed(data))
 		return data
 	except IOError:
 		print('Error opening '+pageName+str(offset)+'.dat') #página não existe

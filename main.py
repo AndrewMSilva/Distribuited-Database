@@ -6,6 +6,7 @@
 #       insert into cliente ("João", 44768356423)
 #       remove from cliente (4) -> 4 é a PK
 #		select * from cliente -> lista todos os registros
+#		show table cliente -> mostra os campos da tabela
 #       exit
 
 import Validator
@@ -16,9 +17,9 @@ print('Based on Postgres 8.0')
 while(True):
 	cmd = "insert into cliente(1, 'Antônio','que')"
 	cmd = "select        *  from cliente  "
-	cmd = "create table cliente (id int PK, nome char(30), sobrenome varchar(12))"
-	cmd = "insert into cliente(2  , 'Antônio','que')"
-	cmd = "select        *  from cliente  "
+	cmd = "create table cliente (nome char(30), id int PK, sobrenome varchar(12))"
+	cmd = "insert into cliente('Antônio', 8, 'que')"
+	cmd = "show table   cliente    "
 
 	#cmd = input('>>> ')
 	cmd = Validator.Read(cmd) # valida o comando

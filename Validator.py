@@ -10,6 +10,8 @@ def Read(cmd=False):
             cmd = DeleteFrom(cmd[11:])
         elif(cmd[0:6] == 'select'):
             cmd = Select(cmd[6:])
+        elif(cmd[0:10] == 'show table'):
+            cmd = ShowTable(cmd[10:])
         elif(cmd == 'exit'):
             exit()
         else:
@@ -32,6 +34,7 @@ def CreateTable(cmd):
             i = j
         elif(status == 0 and (cmd[j] == ' ' or cmd[j] == '(')): # procurando onde termina o nome da tabela
             attr[1] = cmd[i:j]
+            attr[1] = attr[1].split(' ')[0]
             status = 1
         elif(status == 1 and cmd[j-1] == '('): # procurando onde começa os argumentos
             i = j+1
@@ -67,6 +70,7 @@ def InsertInto(cmd):
             i = j
         elif(status == 0 and (cmd[j] == ' ' or cmd[j+1] == '(')): # procurando onde termina o nome da tabela
             attr[1] = cmd[i:j+1]
+            attr[1] = attr[1].split(' ')[0]
             status = 1
         elif(status == 1 and (cmd[j] == '(' or cmd[j-1] == '(')): # procurando onde começa os argumentos
             i = j+1
@@ -98,6 +102,7 @@ def DeleteFrom(cmd):
             i = j
         elif(status == 0 and (cmd[j] == ' ' or cmd[j+1] == '(')): # procurando onde termina o nome da tabela
             attr[1] = cmd[i:j]
+            attr[1] = attr[1].split(' ')[0]
             status = 1
         elif(status == 1 and (cmd[j] == '(' or cmd[j-1] == '(')): # procurando onde começa os argumentos
             i = j+1
@@ -132,7 +137,25 @@ def Select(cmd):
             i = j
         elif(status == 3 and (cmd[j] == ' ' or (j+1) == len(cmd))): # procurando onde termina o nome da tabela
             attr[1] = cmd[i:j+1]
+            attr[1] = attr[1].split(' ')[0]
             status = 4
     if(not attr[0]):
         return False
     return attr # [3, tableName, [campos...]]
+
+def ShowTable(cmd):
+    if(cmd[0] != ' '):
+        return False
+    i = 1
+    status = 0
+    attr = [4,False]
+    for j in range(i,len(cmd)):
+        if(status == 0 and cmd[j] != ' '): # procurando onde começa o nome da tabela
+            status = 1
+            i = j
+        elif(status == 1 and (cmd[j] == ' ' or (j+1) == len(cmd))): # procurando onde termina o nome da tabela
+            attr[1] = cmd[i:j+1]
+            attr[1] = attr[1].split(' ')[0]
+    if(not attr[0]):
+        return False
+    return attr
