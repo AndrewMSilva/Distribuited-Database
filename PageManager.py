@@ -22,8 +22,8 @@ def CreateTable(cmd):
 		if(a[1] == 'int'): #caso o atributo seja inteiro
 			v.append(1)
 			v.append(4) #tamanho fixo, mas será desconsiderado
-			v.append(len(a[1])) #tamanho do nome do campo
-			v.append(a[1]) #nome do campo
+			v.append(len(a[0])) #tamanho do nome do campo
+			v.append(a[0]) #nome do campo
 		elif(a[1][0:4] == 'char'): #caso seja char
 			v.append(2)
 			v.append(int((a[1].split('(')[1].split(')'))[0])) #tamanho do char
