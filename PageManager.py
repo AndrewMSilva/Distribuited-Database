@@ -66,7 +66,7 @@ def List(cmd, pageName):
 
 # PAGES/FRAMES SECTION #
 
-def PageExist(pageName, offset = 0):
+def PageExist(pageName, offset = ''):
 	try:
 		file = open('__pages__/'+pageName+str(offset)+'.dat', 'rb')
 		file.close()
@@ -83,7 +83,7 @@ def CreatePage(pageName, offset):
 		# criando o header
 		pd_tli = 0 # TLI da última mudança
 		pd_lower = headerBytes # Offset para começar o espaço livre
-		pd_upper = pageLen - special - 1 # Offset ao fim do espaço livre
+		pd_upper = pageLen - special # Offset ao fim do espaço livre
 		pd_special = pageLen - special # Deslocamento para o início do espaço especial
 		pd_tlist = 0
 		file.write(pd_tli.to_bytes(4,'big'))
@@ -109,7 +109,9 @@ def CreateFrame(pageName, offset, values): # n = o somatório dos bytes da tupla
 		# calculando somatório de bytes da tupla e verificando os tipos
 		tupleLen = 0
 		meta = GetMeta(pageName)
-		for i in range(0,len(meta)):
+		metaLen = meta[0]
+		meta = meta[1:]
+		for i in range(0,metaLen):
 			if(meta[i][0] == 1 and isinstance(values[i], int)): # se ambos int
 				tupleLen += meta[i][1]
 			elif(meta[i][0] == 2 and isinstance(values[i], str)): # se char e str
@@ -120,7 +122,6 @@ def CreateFrame(pageName, offset, values): # n = o somatório dos bytes da tupla
 				print('Entry and type do not match: check the sequence') # a entrada e o tipo não combinam
 				file.close()
 				return False
-		print(tupleLen)
 		# verificando se há espaço na página
 		file.seek(4, 0) # posição de início do pd_lower
 		pd_lower = int.from_bytes(file.read(2), 'little') # lendo o ponteiro que indica onde colocar o próximo item
@@ -142,11 +143,11 @@ def CreateFrame(pageName, offset, values): # n = o somatório dos bytes da tupla
 
         # gerenciando pd_upper
 		file.seek(6, 0) # posição de início do pd_upper
-		file.write((pd_upper-tupleLen).to_bytes(2, 'little')) # atualizando o ponteiro
+		file.write((pd_upper-tupleLen-1).to_bytes(2, 'little')) # atualizando o ponteiro
 
 		# criando o item
 		file.seek(pd_lower, 0)
-		pointer = pd_upper-tupleLen # ponteiro para a tupla
+		pointer = pd_upper-tupleLen-1 # ponteiro para a tupla
 		status = 1 # estado da tupla (1=sendo usado, 0=livre)
 		file.write(pointer.to_bytes(2, 'little'))
 		file.write(status.to_bytes(1, 'little'))
@@ -169,6 +170,12 @@ def CreateFrame(pageName, offset, values): # n = o somatório dos bytes da tupla
 				# file.seek() # NÃO SEI BEM COMO FAREMOS PRA DAR O ESPAÇO RESTANTE DO CHAR E SABER IGORAR ELE QUANDO PEGAR O VALOR
 			else: # se for varchar
 				file.write(values[i].encode())
+		
+		# atualizando tamanho da lista de itens
+		file.seek(10, 0) # posição de início do tlist
+		tlist = 1 + int.from_bytes(file.read(2), byteorder='little') # tamanho atual da lista
+		file.seek(10, 0) # posição de início do tlist
+		file.write(tlist.to_bytes(2, 'little'))
 
 		# salvando e fechando
 		file.close()
@@ -223,37 +230,40 @@ def GetMeta(pageName): #pegar os atributos da tabela
 def GetFrames(pageName,offset):
 	try:
 		file = open('__pages__/'+pageName+str(offset)+'.dat', 'rb')
-		attr = []
+		data = []
 		meta = GetMeta(pageName)
-		metalen = int(meta[0])
+		metaLen = int(meta[0])
+		meta = meta[1:]
+		itemLen = 3 + 2*metaLen
+		file.seek(10,0)
+		tlist = int.from_bytes(file.read(10),byteorder='little')
 		file.seek(4,0)
-		low = int.from_bytes(file.read(2),byteorder='little')
-		file.seek(12,0)
-		while(file.tell() < low):
-			for i in range(0,int(low/(3+(2*metalen)))):
-				v = []
-				aux = []
-				aux.append(0)
-				pointer = int.from_bytes(file.read(2), byteorder='little') #ponteiro pra tupla
-				status = int.from_bytes(file.read(1), byteorder='little') #status
-				if(status == 0):
-					continue
-				for j in range(1,metalen+1):
-					aux.append(int.from_bytes(file.read(2), byteorder='little'))
-				file.seek(pointer,0)
-				for j in range(1,metalen+1):
-					if(meta[j][0] == 1): #lendo int
-						a = int.from_bytes(file.read(aux[j]), byteorder='little') #tamanho do campo
-						v.append(a)
-					else: #char e varchar PRECISA DO TOAST NISSO DPS
-						a = file.read(aux[j]+1).decode()
-						v.append(a)
-				attr.append(v)
-				file.seek(12+(3+(2*metalen))*(i+1),0)
-		file.close()
-		print(attr)
+		lower = int.from_bytes(file.read(2),byteorder='little')
+		for itemP in range(12, lower, itemLen):
+			file.seek(itemP, 0)
+			aux = []
+			pointer = int.from_bytes(file.read(2), byteorder='little') #ponteiro pra tupla
+			status = int.from_bytes(file.read(1), byteorder='little') #status
+			if(status == 0): # vai para o próximo item se este não estiver sendo usado
+				continue
+			attrLen = []
+			# pegando os tamanhos dos campos
+			for i in range(0, metaLen):
+				attrLen.append(int.from_bytes(file.read(2), byteorder='little'))
+			# pegando a tupla
+			file.seek(pointer, 0)
+			for i in range(0, metaLen):
+				if(meta[i][0] == 1): #lendo int
+					aux.append(int.from_bytes(file.read(attrLen[i]), byteorder='little')) #tamanho do campo
+				elif(meta[i][0] == 2): # char
+					aux.append(file.read(attrLen[i]+1).decode())
+					file.seek(file.tell()+meta[i][1]-attrLen[i], 0)
+				else: #char e varchar PRECISA DO TOAST NISSO DPS
+					aux.append(file.read(attrLen[i]).decode())
+			data.append(aux)
+		print(data)
 		exit()
-		return attr
+		return data
 	except IOError:
-		print('Error opening '+pageName+'meta.dat') #página não existe
+		print('Error opening '+pageName+str(offset)+'.dat') #página não existe
 		return False

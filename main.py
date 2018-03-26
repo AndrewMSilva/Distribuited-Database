@@ -14,9 +14,10 @@ import PageManager
 print('\nWelcome to best SGBD on universe! Enjoy it xD')
 print('Based on Postgres 8.0')
 while(True):
-	cmd = "select    *  from cliente  "
 	cmd = "insert into cliente(1, 'Antônio','que')"
+	cmd = "select        *  from cliente  "
 	cmd = "create table cliente (id int PK, nome char(30), sobrenome varchar(12))"
+	cmd = "insert into cliente(2  , 'Antônio','que')"
 	cmd = "select        *  from cliente  "
 
 	#cmd = input('>>> ')
