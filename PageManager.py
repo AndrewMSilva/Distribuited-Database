@@ -46,8 +46,11 @@ def InsertInto(cmd):
 	for values in cmd[1:]:
 		CreateFrame(cmd[0], 0, values)
 
-def DeleteFrom(cmd):
-	pass
+def DeleteFrom(cmd): # recebe [2, tableName, [[attr, value],[attr, value]]]
+	offset = 0
+	while(PageExist(cmd[0],offset)):
+		DeleteFrame(cmd[0], offset, cmd[1])
+		offset += 1
 
 def Select(cmd):
 	offset = 0
@@ -191,6 +194,57 @@ def CreateFrame(pageName, offset, values): # n = o somatório dos bytes da tupla
 		print('Error opening '+pageName+str(offset)+'.dat')
 		return False
 
+def DeleteFrame(pageName, offset, values):
+	try:
+		file = open('__pages__/'+pageName+str(offset)+'.dat', 'r+b')
+		meta = GetMeta(pageName)
+		metaLen = meta[0]
+		meta = meta[1:]
+        # procurando e deletando registros
+		itemLen = 3 + 2*metaLen
+		file.seek(4,0)
+		lower = int.from_bytes(file.read(2),byteorder='little')
+		for itemP in range(12, lower, itemLen):
+			file.seek(itemP, 0)
+			pointer = int.from_bytes(file.read(2), byteorder='little') #ponteiro pra tupla
+			status = int.from_bytes(file.read(1), byteorder='little') #status
+			if(status == 0): # vai para o próximo item se este não estiver sendo usado
+				continue
+			attrLen = []
+			# pegando os tamanhos dos campos
+			for i in range(0, metaLen):
+				attrLen.append(int.from_bytes(file.read(2), byteorder='little'))
+			# pegando a tupla
+			file.seek(pointer, 0)
+			for i in range(0, metaLen):
+				encontrou = False
+				v = 0
+				if(meta[i][0] == 1): #lendo int
+					v = int.from_bytes(file.read(attrLen[i]), byteorder='little') #tamanho do campo
+				elif(meta[i][0] == 2): # char
+					v = file.read(attrLen[i]+1).decode()
+					file.seek(file.tell()+meta[i][1]-attrLen[i], 0)
+				else: #char e varchar PRECISA DO TOAST NISSO DPS
+					v = file.read(attrLen[i]).decode()
+				for j in range(0, len(values)):
+					if(meta[i][2] == values[j][0]):
+						if(v == values[j][1]):
+							now = file.tell()
+							file.seek(itemP+2, 0)
+							file.write(bytes(1))
+							file.seek(now)
+							encontrou = True
+							break
+				if(encontrou):
+					break
+		# salvando e fechando
+		file.close()
+		return True
+	except IOError:
+		print('Error opening '+pageName+str(offset)+'.dat')
+		return False
+
+
 
 def CreateMetaPage(pageName,attr): # [[type,typeLen,nameLen,name],...] | cria a página com os campos da tupla
 	try:
@@ -242,8 +296,6 @@ def GetFrames(pageName,offset):
 		metaLen = int(meta[0])
 		meta = meta[1:]
 		itemLen = 3 + 2*metaLen
-		file.seek(10,0)
-		tlist = int.from_bytes(file.read(10),byteorder='little')
 		file.seek(4,0)
 		lower = int.from_bytes(file.read(2),byteorder='little')
 		for itemP in range(12, lower, itemLen):

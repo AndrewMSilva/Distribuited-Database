@@ -15,11 +15,12 @@ import PageManager
 print('\nWelcome to best SGBD on universe! Enjoy it xD')
 print('Based on Postgres 8.0')
 while(True):
-	cmd = "insert into cliente(1, 'Antônio','que')"
 	cmd = "select        *  from cliente  "
 	cmd = "create table cliente (nome char(30), id int PK, sobrenome varchar(12))"
 	cmd = "insert into cliente('Antônio', 8, 'que')"
 	cmd = "show table   cliente    "
+	cmd = "delete from   cliente   where id  =  2 "
+	cmd = "select        *  from cliente  "
 
 	#cmd = input('>>> ')
 	cmd = Validator.Read(cmd) # valida o comando

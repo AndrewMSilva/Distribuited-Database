@@ -96,19 +96,26 @@ def DeleteFrom(cmd):
     i = 1
     status = -1
     attr = [2,False]
+    values = []
     for j in range(i,len(cmd)):
         if(status == -1 and cmd[j] != ' '): # procurando onde começa o nome da tabela
             status = 0
             i = j
-        elif(status == 0 and (cmd[j] == ' ' or cmd[j+1] == '(')): # procurando onde termina o nome da tabela
-            attr[1] = cmd[i:j]
+        elif(status == 0 and cmd[j-5:j] == 'where'): # procurando o 'where'
+            attr[1] = cmd[i:j-6]
             attr[1] = attr[1].split(' ')[0]
             status = 1
-        elif(status == 1 and (cmd[j] == '(' or cmd[j-1] == '(')): # procurando onde começa os argumentos
-            i = j+1
-            status = 2
-        elif(status == 2):
-            attr.append(int(cmd[j:len(cmd)-1]))
+        elif(status == 1 and (cmd[j] != ' ')): # procurando onde começa os argumentos
+            s = cmd[j:].split(',');
+            for a in s:
+                v = a.split('=')
+                v[0] = v[0].split(' ')[0]
+                if(v[1].find("'") == -1):
+                    v[1] = int(v[1])
+                else:
+                    v[1] = v[1].cmd[i].split("'")[0]
+                values.append(v)
+            attr.append(values)
             break
     if(not attr[0]):
         return False
@@ -131,7 +138,6 @@ def Select(cmd):
                 c[i] = c[i].replace(" ", "") # removendo espaços
             attr.append(c)
             status = 2
-            print(cmd[j])
         elif(status == 2 and cmd[j] != ' '): # procurando onde começa o nome da tabela
             status = 3
             i = j
