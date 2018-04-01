@@ -88,7 +88,7 @@ def CreatePage(pageName, offset):
 	try:
 		file = open('__pages__/'+pageName+str(offset)+'.dat', 'w+b')
 		pageLen = 8*1024 # 8KB
-		special = 4 # bytes do frame especial
+		special = 0 # bytes do frame especial
 		headerBytes = 12
 		# criando o header
 		pd_tli = 0 # TLI da última mudança
@@ -113,9 +113,146 @@ def CreatePage(pageName, offset):
 		print('Error creating '+pageName+str(offset)+'.dat')
 		return False
 
+def CreateToastListPage(pageName, offset):
+	try:
+		file = open('__pages__/'+pageName+str(offset)+'ToastList.dat', 'w+b')
+		pageLen = 8*1024 # 8KB
+		headerBytes = 8
+		# criando o header
+		pd_lower = headerBytes # Offset para começar o espaço livre
+		ListLength = 0
+		LastUsedPage = 0
+		LastID = 0
+		file.write(pd_lower.to_bytes(2,'little'))
+		file.write(ListLength.to_bytes(2,'little'))
+		file.write(LastUsedPage.to_bytes(2,'little'))
+		file.write(LastID.to_bytes(2,'little'))
+		# inicializando espaços vazios
+		free = pageLen - headerBytes # bytes livres
+		file.write(bytes(free))
+		# salvando e fechando
+		file.close()
+		return True
+	except IOError:
+		print('Error creating '+pageName+str(offset)+'ToastList.dat')
+		return False
+
+def CreateToastPage(pageName, offset):
+	try:
+		file = open('__pages__/'+pageName+str(offset)+'Toast.dat', 'w+b')
+		pageLen = 8*1024 # 8KB
+		headerBytes = 2
+		# criando o header
+		pd_lower = headerBytes # Offset para começar o espaço livre
+		file.write(pd_lower.to_bytes(2,'little'))
+		# inicializando espaços vazios
+		free = pageLen - headerBytes # bytes livres
+		file.write(bytes(free))
+		# salvando e fechando
+		file.close()
+		return True
+	except IOError:
+		print('Error creating '+pageName+str(offset)+'Toast.dat')
+		return False
+
+def CreateToastListFrame(pageName, offset, text): 
+	try:
+		file = open('__pages__/'+pageName+str(offset)+'ToastList.dat', 'r+b')
+		# calculando somatório de bytes da tupla e inserindo o nodo da lista e o nodo na pagina de toast
+		file.seek(6,0)
+		tupleLen = 12
+		tupleId = int.from_bytes(file.read(2), 'little')
+		tuplePointer = 0
+		itemSize = len(text)
+
+		file.seek(6,0)
+		aux = tupleId + 1
+		file.write(aux.to_bytes(2, 'little')) #atualizando o ultimo ID
+
+		# verificando se há espaço na página
+		file.seek(0, 0) # posição de início do pd_lower
+		pd_lower = int.from_bytes(file.read(2), 'little') # lendo o ponteiro que indica onde colocar o próximo item
+
+		if((8*1024 - pd_lower) < (tupleLen)): # se não há espaço
+			file.close()
+			if(PageExist(pageName+'ToastList', offset+1)): # se existe uma página seguinte
+				CreateToastListFrame(pageName, offset+1, text) # tenta inserir na próxima página
+			else: # se não existe uma págica seguinte
+				CreateToastListPage(pageName, offset+1) # cria uma nova página
+				CreateToastListFrame(pageName, offset+1, text) # insere a tupla na nova página
+			return True
+		# gerenciando pd_lower
+		file.seek(0, 0) # posição de início do pd_lower
+		file.write((pd_lower+tupleLen).to_bytes(2, 'little')) # atualizando o ponteiro
+
+		file.seek(4,0) #posição do lastUsedPage
+		LastUsedPage = int.from_bytes(file.read(2), 'little')
+
+		aux = createToastFrame(pageName,lastUsedPage,text) #retorna ponteiro do item e página
+
+		tuplePointer = aux[0]
+		LastUsedPage = aux[1]
+		tuplePage = aux[1]
+
+		file.seek(4,0) #atualizando o LUP
+		file.write(LastUsedPage.to_bytes(2, 'little'))
+
+		# criando o item
+		file.seek(pd_lower, 0)
+		file.write(tupleId.to_bytes(4, 'little'))
+		file.write(tuplePage.to_bytes(4, 'little'))
+		file.write(tuplePointer.to_bytes(4, 'little'))
+		file.write(itemSize.to_bytes(4, 'little'))
+
+		# atualizando tamanho da list	print(s)a de itens
+		file.seek(2, 0) # posição de início do tlist
+		tlist = 1 + int.from_bytes(file.read(2), byteorder='little') # tamanho atual da lista
+		file.seek(2, 0) # posição de início do tlist
+		file.write(tlist.to_bytes(2, 'little'))
+
+		# salvando e fechando
+		file.close()
+		return True
+	except IOError:
+		print('Error opening '+pageName+str(offset)+'ToastList.dat')
+		return False
+
+def createToastFrame(pageName,offset,text):
+	try:
+		file = open('__pages__/'+pageName+str(offset)+'Toast.dat', 'r+b')
+	
+		# verificando se há espaço na página
+		file.seek(0, 0) # posição de início do pd_lower
+		pd_lower = int.from_bytes(file.read(2), 'little') # lendo o ponteiro que indica onde colocar o próximo item
+
+		if((pd_lower + len(text)) <= (8*1024 - pd_lower)):
+			# gerenciando pd_lower
+			file.seek(0, 0) # posição de início do pd_lower
+			file.write((pd_lower+tupleLen).to_bytes(2, 'little')) # atualizando o ponteiro
+			file.seek(pd_lower,0)
+			file.write(text.encode())
+			aux = []
+			aux.append(pd_lower)
+			aux.append(offset)
+			return aux
+
+		remaining = 8*1024 - pd_lower
+		insert = text[0:remaining]
+		file.seek(pd_lower, 0) # posição de início do pd_lower
+		file.write(insert.encode()) #inserindo o que dá
+		file.seek(0,0) #atualizando pd_lower pro máximo
+		file.write((8*1024).to_bytes(2, 'little'))
+
+		CreateToastPage(pageName, offset+1) # cria uma nova página
+		file.close() #salando e fechando
+		return CreateToastFrame(pageName, offset+1, text[remaining:])
+	except IOError:
+		print('Error opening '+pageName+str(offset)+'.dat')
+		return False
+
 def CreateFrame(pageName, offset, values): # n = o somatório dos bytes da tupla
 	try:
-		file = open('__pages__/'+pageName+str(offset)+'.dat', 'r+b')
+		file = open('__pages__/'+pageName+str(offset)+'Toast.dat', 'r+b')
 		# calculando somatório de bytes da tupla e verificando os tipos
 		tupleLen = 0
 		meta = GetMeta(pageName)
