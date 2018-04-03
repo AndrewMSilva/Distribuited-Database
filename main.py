@@ -21,6 +21,7 @@ while(True):
 	cmd = "show table   cliente    "
 	cmd = "delete from   cliente   where id  =  2 "
 	cmd = "select        *  from cliente  "
+	print(PageManager.getToastListFrame(1, 'cliente'))
 	#cmd = input('>>> ')
 	cmd = Validator.Read(cmd) # valida o comando
 	if(isinstance(cmd,list)): # verifica se retornou uma lista
