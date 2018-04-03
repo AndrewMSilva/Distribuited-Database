@@ -234,6 +234,7 @@ def createToastFrame(pageName,offset,text):
 			aux = []
 			aux.append(pd_lower)
 			aux.append(offset)
+			file.close()
 			return aux
 
 		remaining = 8*1024 - pd_lower
@@ -247,7 +248,7 @@ def createToastFrame(pageName,offset,text):
 		file.close() #salando e fechando
 		return CreateToastFrame(pageName, offset+1, text[remaining:])
 	except IOError:
-		print('Error opening '+pageName+str(offset)+'.dat')
+		print('Error opening '+pageName+str(offset)+'Toast.dat')
 		return False
 
 def CreateFrame(pageName, offset, values): # n = o somatório dos bytes da tupla
@@ -461,4 +462,24 @@ def GetFrames(pageName,offset):
 		return data
 	except IOError:
 		print('Error opening '+pageName+str(offset)+'.dat') #página não existe
+		return False
+
+def getToastFrame(pageName,offset,pointer,size,text = ''): #envie text como ''
+	try:
+		file = open('__pages__/'+pageName+str(offset)+'Toast.dat', 'r+b')
+	
+		file.seek(pointer, 0) 
+
+		if(size <= (8*1024 - pointer)):
+			a = file.read(size).decode()
+			file.close()
+			return a
+
+		remaining = size - (8*1024 - pointer)
+		text = text + file.read(remaining).decode()
+		size = size - remaining
+		file.close() #salando e fechando
+		return getToastFrame(pageName,offset+1,2,size,text)
+	except IOError:
+		print('Error opening '+pageName+str(offset)+'Toast.dat')
 		return False
