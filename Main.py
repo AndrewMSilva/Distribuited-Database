@@ -10,7 +10,7 @@
 #       exit
 
 import Validator
-import PageManager
+import Executer
 
 print('\nWelcome to best SGBD on universe! Enjoy it xD')
 print('Based on Postgres 8.0')
@@ -25,5 +25,5 @@ while(True):
 	cmd = input('>>> ')
 	cmd = Validator.Read(cmd) # valida o comando
 	if(isinstance(cmd,list)): # verifica se retornou uma lista
-		PageManager.Read(cmd) # executa o comando
+		Executer.Read(cmd) # executa o comando
 		#break # usar apenas para testar um comando específico como parâmetro
