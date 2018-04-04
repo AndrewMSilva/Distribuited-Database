@@ -96,7 +96,7 @@ def CreatePage(pageName, offset):
 		pd_upper = pageLen - special # Offset ao fim do espaço livre
 		pd_special = pageLen - special # Deslocamento para o início do espaço especial
 		pd_tlist = 0
-		file.write(pd_tli.to_bytes(4,'big'))
+		file.write(pd_tli.to_bytes(4,'little'))
 		file.write(pd_lower.to_bytes(2,'little'))
 		file.write(pd_upper.to_bytes(2,'little'))
 		file.write(pd_special.to_bytes(2,'little'))
@@ -108,6 +108,8 @@ def CreatePage(pageName, offset):
 		file.write(bytes(special))
 		# salvando e fechando
 		file.close()
+		createToastPage(pageName,0)
+		createToastListPage(pageName,0)
 		return True
 	except IOError:
 		print('Error creating '+pageName+str(offset)+'.dat')
@@ -154,7 +156,7 @@ def createToastPage(pageName, offset):
 		print('Error creating '+pageName+str(offset)+'Toast.dat')
 		return False
 
-def createToastListFrame(pageName, offset, text): 
+def createToastListFrame(pageName, offset, text):
 	try:
 		file = open('__pages__/'+pageName+str(offset)+'ToastList.dat', 'r+b')
 		# calculando somatório de bytes da tupla e inserindo o nodo da lista e o nodo na pagina de toast
@@ -221,11 +223,11 @@ def createToastListFrame(pageName, offset, text):
 def createToastFrame(pageName,offset,text):
 	try:
 		file = open('__pages__/'+pageName+str(offset)+'Toast.dat', 'r+b')
-	
+
 		# verificando se há espaço na página
 		file.seek(0, 0) # posição de início do pd_lower
 		pd_lower = int.from_bytes(file.read(2), 'little') # lendo o ponteiro que indica onde colocar o próximo item
-		tupleLen = len(text) 
+		tupleLen = len(text)
 		if((pd_lower + tupleLen) <= (8*1024 - pd_lower)):
 			# gerenciando pd_lower
 			file.seek(0, 0) # posição de início do pd_lower
@@ -258,6 +260,7 @@ def CreateFrame(pageName, offset, values): # n = o somatório dos bytes da tupla
 		# calculando somatório de bytes da tupla e verificando os tipos
 		tupleLen = 0
 		meta = GetMeta(pageName)
+		print(meta)
 		metaLen = meta[0]
 		meta = meta[1:]
 		for i in range(0,metaLen):
@@ -276,7 +279,7 @@ def CreateFrame(pageName, offset, values): # n = o somatório dos bytes da tupla
 		pd_lower = int.from_bytes(file.read(2), 'little') # lendo o ponteiro que indica onde colocar o próximo item
 		file.seek(6, 0) # posição de início do pd_upper
 		pd_upper = int.from_bytes(file.read(2), 'little') # lendo o ponteiro que indica onde colocar a próxima tupla
-		itemLen = 3 + 2*len(values)
+		itemLen = 3 + 3*len(values)
 
 		if((pd_upper - pd_lower) < (tupleLen + itemLen)): # se não há espaço
 			file.close()
@@ -290,7 +293,7 @@ def CreateFrame(pageName, offset, values): # n = o somatório dos bytes da tupla
 		file.seek(4, 0) # posição de início do pd_lower
 		file.write((pd_lower+itemLen).to_bytes(2, 'little')) # atualizando o ponteiro
 
-        # gerenciando pd_upper
+        	# gerenciando pd_upper
 		file.seek(6, 0) # posição de início do pd_upper
 		file.write((pd_upper-tupleLen-1).to_bytes(2, 'little')) # atualizando o ponteiro
 
@@ -302,8 +305,17 @@ def CreateFrame(pageName, offset, values): # n = o somatório dos bytes da tupla
 		file.write(status.to_bytes(1, 'little'))
 		for i in range(0,len(meta)):
 			if(meta[i][0] == 1): # se for int
+				file.write(meta[i][0].to_bytes(1, 'little'))
 				file.write(meta[i][1].to_bytes(2, 'little'))
-			else: # se não for seguinte
+			elif(meta[i][0] == 2): # se for char
+				if(meta[i][1] > 255):
+					meta[i][0] = 4
+				file.write(meta[i][0].to_bytes(1, 'little'))
+				file.write(len(values[i]).to_bytes(2, 'little'))
+			else: # se for varchar
+				if(len(values[i]) > 255):
+					meta[i][0] = 4
+				file.write(meta[i][0].to_bytes(1, 'little'))
 				file.write(len(values[i]).to_bytes(2, 'little'))
 
 		# criando a tupla
@@ -316,10 +328,10 @@ def CreateFrame(pageName, offset, values): # n = o somatório dos bytes da tupla
 				for a in range(b,meta[i][1]):
 					values[i] += "0"
 				file.write(values[i].encode())
-				# file.seek() # NÃO SEI BEM COMO FAREMOS PRA DAR O ESPAÇO RESTANTE DO CHAR E SABER IGORAR ELE QUANDO PEGAR O VALOR
-			else: # se for varchar
+			elif(meta[i][0] == 3): # se for varchar
 				file.write(values[i].encode())
-
+			else:
+				file.write((createToastListFrame(pageName,0,values[i])).to_bytes(4,'little'))
 		# atualizando tamanho da list	print(s)a de itens
 		file.seek(10, 0) # posição de início do tlist
 		tlist = 1 + int.from_bytes(file.read(2), byteorder='little') # tamanho atual da lista
@@ -340,7 +352,7 @@ def DeleteFrame(pageName, offset, values):
 		metaLen = meta[0]
 		meta = meta[1:]
         # procurando e deletando registros
-		itemLen = 3 + 2*metaLen
+		itemLen = 3 + 3*metaLen
 		file.seek(4,0)
 		lower = int.from_bytes(file.read(2),byteorder='little')
 		for itemP in range(12, lower, itemLen):
@@ -350,21 +362,27 @@ def DeleteFrame(pageName, offset, values):
 			if(status == 0): # vai para o próximo item se este não estiver sendo usado
 				continue
 			attrLen = []
+			attrType = []
 			# pegando os tamanhos dos campos
 			for i in range(0, metaLen):
+				attrType.append(int.from_bytes(file.read(1), byteorder='little'))
 				attrLen.append(int.from_bytes(file.read(2), byteorder='little'))
 			# pegando a tupla
 			file.seek(pointer, 0)
 			for i in range(0, metaLen):
 				encontrou = False
 				v = 0
-				if(meta[i][0] == 1): #lendo int
+				if(attrType[i] == 1): #lendo int
 					v = int.from_bytes(file.read(attrLen[i]), byteorder='little') #tamanho do campo
-				elif(meta[i][0] == 2): # char
+				elif(attrType[i] == 2): # char
 					v = file.read(attrLen[i]+1).decode()
 					file.seek(file.tell()+meta[i][1]-attrLen[i], 0)
-				else: #char e varchar PRECISA DO TOAST NISSO DPS
+				elif(attrType[i] == 3 ): # varchar
 					v = file.read(attrLen[i]).decode()
+				else:
+					p = int.from_bytes(file.read(4), byteorder='little') #tamanho do campo
+					a = getToastListFrame(p, pageName)
+					v = a[0:attrLen[i]]
 				for j in range(0, len(values)):
 					if(meta[i][2] == values[j][0]):
 						if(v == values[j][1]):
@@ -383,8 +401,6 @@ def DeleteFrame(pageName, offset, values):
 		print('Error opening '+pageName+str(offset)+'.dat')
 		return False
 
-
-
 def CreateMetaPage(pageName,attr): # [[type,typeLen,nameLen,name],...] | cria a página com os campos da tupla
 	try:
 		file = open('__pages__/'+pageName+'meta.dat', 'wb')
@@ -394,7 +410,7 @@ def CreateMetaPage(pageName,attr): # [[type,typeLen,nameLen,name],...] | cria a 
 		file.write(metaLen.to_bytes(1,'little')) # quantidade de atributos do meta
 		for a in attr:
 			file.write(a[0].to_bytes(1,'little')) #tipo do campo
-			file.write(a[1].to_bytes(1,'little')) #tamanho do campo
+			file.write(a[1].to_bytes(4,'little')) #tamanho do campo
 			file.write(a[2].to_bytes(1,'little')) #tamanho do nome
 			file.write(a[3].encode()) #pra string
 		file.write(bytes(pageLen - metaLen))
@@ -415,7 +431,7 @@ def GetMeta(pageName): #pegar os atributos da tabela
 			v = []
 			a = int.from_bytes(file.read(1), byteorder='little') #tipo do primeiro campo, se não existir retorna um vetor vazio
 			v.append(a)
-			a = int.from_bytes(file.read(1), byteorder='little') #tamanho do campo
+			a = int.from_bytes(file.read(4), byteorder='little') #tamanho do campo
 			v.append(a)
 			a = int.from_bytes(file.read(1), byteorder='little')#tamanho do nome do campo
 			a = file.read(a).decode()
@@ -432,9 +448,10 @@ def GetFrames(pageName,offset):
 		file = open('__pages__/'+pageName+str(offset)+'.dat', 'rb')
 		data = []
 		meta = GetMeta(pageName)
+		print(meta)
 		metaLen = int(meta[0])
 		meta = meta[1:]
-		itemLen = 3 + 2*metaLen
+		itemLen = 3 + 3*metaLen
 		file.seek(4,0)
 		lower = int.from_bytes(file.read(2),byteorder='little')
 		for itemP in range(12, lower, itemLen):
@@ -445,19 +462,25 @@ def GetFrames(pageName,offset):
 			if(status == 0): # vai para o próximo item se este não estiver sendo usado
 				continue
 			attrLen = []
+			attrType = []
 			# pegando os tamanhos dos campos
 			for i in range(0, metaLen):
+				attrType.append(int.from_bytes(file.read(1), byteorder='little'))
 				attrLen.append(int.from_bytes(file.read(2), byteorder='little'))
 			# pegando a tupla
 			file.seek(pointer, 0)
 			for i in range(0, metaLen):
-				if(meta[i][0] == 1): #lendo int
+				if(attrType[i] == 1): #lendo int
 					aux.append(int.from_bytes(file.read(attrLen[i]), byteorder='little')) #tamanho do campo
-				elif(meta[i][0] == 2): # char
-					aux.append(file.read(attrLen[i]+1).decode())
-					file.seek(file.tell()+meta[i][1]-attrLen[i], 0)
-				else: #char e varchar PRECISA DO TOAST NISSO DPS
+				elif(attrType[i] == 2): # char
 					aux.append(file.read(attrLen[i]).decode())
+					file.seek(file.tell()+meta[i][1]-attrLen[i], 0)
+				elif(attrType[i] == 3): #varchar
+					aux.append(file.read(1 + attrLen[i]).decode())
+				else: #toast item
+					p = int.from_bytes(file.read(4), byteorder='little') #tamanho do campo
+					a = getToastListFrame(p, pageName)
+					aux.append(a[0:attrLen[i]])
 			data.append(aux)
 		data = list(reversed(data))
 		return data
@@ -475,11 +498,10 @@ def getToastListFrame(id, pageName, offset = 0):
 		aux = 8 + 12*a
 		file.seek(aux,0)
 		idAtual = int.from_bytes(file.read(4), byteorder='little')
-		print(idAtual)
 		if(id == idAtual):
 			page = int.from_bytes(file.read(2), byteorder='little')
 			pointer = int.from_bytes(file.read(2), byteorder='little')
-			size = int.from_bytes(file.read(4), byteorder='little')
+			size = 1+int.from_bytes(file.read(4), byteorder='little')
 			file.close()
 			return getToastFrame(pageName,page,pointer,size)
 
@@ -490,8 +512,8 @@ def getToastListFrame(id, pageName, offset = 0):
 def getToastFrame(pageName,offset,pointer,size,text = ''): #envie text como ''
 	try:
 		file = open('__pages__/'+pageName+str(offset)+'Toast.dat', 'r+b')
-	
-		file.seek(pointer, 0) 
+
+		file.seek(pointer, 0)
 
 		if(size <= (8*1024 - pointer)):
 			a = file.read(size).decode()

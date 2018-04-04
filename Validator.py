@@ -79,6 +79,7 @@ def InsertInto(cmd):
             cmd = cmd[j:len(cmd)-1].split(',') # separando os argumentos pela vírgula
             for i in range(0,len(cmd)):
                 a = cmd[i].split("'") # separando pelas aspas pra conferir o tipo
+                print(a)
                 if(len(a) == 1):
                     values.append(int(cmd[i]))
                 else:

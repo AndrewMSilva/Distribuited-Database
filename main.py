@@ -17,13 +17,13 @@ print('Based on Postgres 8.0')
 while(True):
 	cmd = "select        *  from cliente  "
 	cmd = "create table cliente (nome char(30), id int PK, sobrenome varchar(12))"
-	cmd = "insert into cliente('Antônio', 8, 'que')"
+	cmd = "insert into cliente('Antônio NDJSADJS', 8, 'que')"
 	cmd = "show table   cliente    "
 	cmd = "delete from   cliente   where id  =  2 "
+	cmd = "insert into cliente('Antônio hgghfdg', 5, 'que')"
 	cmd = "select        *  from cliente  "
-	print(PageManager.getToastListFrame(1, 'cliente'))
-	#cmd = input('>>> ')
+	cmd = input('>>> ')
 	cmd = Validator.Read(cmd) # valida o comando
 	if(isinstance(cmd,list)): # verifica se retornou uma lista
 		PageManager.Read(cmd) # executa o comando
-		break # usar apenas para testar um comando específico como parâmetro
+		#break # usar apenas para testar um comando específico como parâmetro
