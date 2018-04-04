@@ -1,3 +1,4 @@
+from pyparsing import *
 
 def Read(cmd=False):
     # acionando valiadores
@@ -5,7 +6,7 @@ def Read(cmd=False):
         if(cmd[0:12] == 'create table'):
             cmd = CreateTable(cmd[12:])
         elif(cmd[0:11] == 'insert into'):
-            cmd = InsertInto(cmd[11:])
+            cmd = InsertInto(cmd)
         elif(cmd[0:11] == 'delete from'):
             cmd = DeleteFrom(cmd[11:])
         elif(cmd[0:6] == 'select'):
@@ -58,38 +59,38 @@ def CreateTable(cmd):
     return attr
 
 def InsertInto(cmd):
-    if(cmd[0] != ' '):
-        return False
-    i = 1
-    status = -1
-    attr = [1,False]
-    values = []
-    for j in range(i,len(cmd)):
-        if(status == -1 and cmd[j] != ' '): # procurando onde começa o nome da tabela
-            status = 0
-            i = j
-        elif(status == 0 and (cmd[j] == ' ' or cmd[j+1] == '(')): # procurando onde termina o nome da tabela
-            attr[1] = cmd[i:j+1]
-            attr[1] = attr[1].split(' ')[0]
-            status = 1
-        elif(status == 1 and (cmd[j] == '(' or cmd[j-1] == '(')): # procurando onde começa os argumentos
-            i = j+1
-            status = 2
-        elif(status == 2):
-            cmd = cmd[j:len(cmd)-1].split(',') # separando os argumentos pela vírgula
-            for i in range(0,len(cmd)):
-                a = cmd[i].split("'") # separando pelas aspas pra conferir o tipo
-                print(a)
-                if(len(a) == 1):
-                    values.append(int(cmd[i]))
-                else:
-                    values.append(a[1])
+    try:
+        # Object names and numbers match these regular expression
+        object_name = Regex('[a-zA-Z_]+')
+        number = Regex('-?[0-9]+')
+        # A string is just something with quotes around it - PyParsing has a built in
+        string = QuotedString("'") | QuotedString('"')
 
-            break
-    if(not values[0]):
+        # A term is a number or a string
+        term = number | string
+
+        # The values we want to capture are either delimited lists of expressions we know about...
+        term_list = (delimitedList(term)).setResultsName('terms')
+
+        # Or just an expression we know about by itself
+        table_name = object_name.setResultsName('table')
+
+        # And an SQL statement is just all of these pieces joined together with some string between them
+        sql_stmt = "insert into " + table_name + "(" + term_list + ")"
+
+        res = sql_stmt.parseString(cmd)
+        query = [1, res.table, list(res.terms)]
+
+        for i in range(0, len(query[2])):
+            try:
+                query[2][i] = int(query[2][i])
+            except ValueError:
+                continue
+
+        print(query)
+        return query
+    except ParseException as pe:
         return False
-    attr.append(values)
-    return attr
 
 def DeleteFrom(cmd):
     if(cmd[0] != ' '):

@@ -1,4 +1,4 @@
-import PageManager
+from PageManager import *
 
 def Read(cmd):
     if(cmd[0] == 0):

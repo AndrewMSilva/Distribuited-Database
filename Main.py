@@ -20,8 +20,7 @@ while(True):
 	cmd = "insert into cliente('Antônio NDJSADJS', 8, 'que')"
 	cmd = "show table   cliente    "
 	cmd = "delete from   cliente   where id  =  2 "
-	cmd = "insert into cliente('Antônio hgghfdg', 5, 'que')"
-	cmd = "select        *  from cliente  "
+	cmd = "insert into cliente('Antônio, hgghfdg', 5, 'que')"
 	cmd = input('>>> ')
 	cmd = Validator.Read(cmd) # valida o comando
 	if(isinstance(cmd,list)): # verifica se retornou uma lista

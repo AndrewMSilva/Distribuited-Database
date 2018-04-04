@@ -47,7 +47,7 @@ def CreateToastListFrame(pageName, offset, text):
 		# calculando somatório de bytes da tupla e inserindo o nodo da lista e o nodo na pagina de toast
 		file.seek(6,0)
 		tupleLen = 12
-		tupleId = int.from_bytes(file.read(2), 'little')
+		tupleId = int.from_bytes(file.read(4), 'little')
 		tuplePointer = 0
 		itemSize = len(text)
 
@@ -56,7 +56,7 @@ def CreateToastListFrame(pageName, offset, text):
 
 		file.seek(6,0)
 		aux = tupleId + 1
-		file.write(aux.to_bytes(2, 'little')) #atualizando o ultimo ID
+		file.write(aux.to_bytes(4, 'little')) #atualizando o ultimo ID
 
 		# verificando se há espaço na página
 		file.seek(0, 0) # posição de início do pd_lower
@@ -64,12 +64,9 @@ def CreateToastListFrame(pageName, offset, text):
 
 		if((8*1024 - pd_lower) < (tupleLen)): # se não há espaço
 			file.close()
-			if(PageExist(pageName+'ToastList', offset+1)): # se existe uma página seguinte
-				CreateToastListFrame(pageName, offset+1, text) # tenta inserir na próxima página
-			else: # se não existe uma págica seguinte
-				CreateToastListPage(pageName, offset+1,lastUsedPage) # cria uma nova página
-				CreateToastListFrame(pageName, offset+1, text) # insere a tupla na nova página
-			return True
+			CreateToastListPage(pageName, offset+1,lastUsedPage) # cria uma nova página
+			return CreateToastListFrame(pageName, offset+1, text) # insere a tupla na nova página
+
 		# gerenciando pd_lower
 		file.seek(0, 0) # posição de início do pd_lower
 		file.write((pd_lower+tupleLen).to_bytes(2, 'little')) # atualizando o ponteiro
@@ -79,7 +76,7 @@ def CreateToastListFrame(pageName, offset, text):
 
 		aux = CreateToastFrame(pageName,lastUsedPage,text) #retorna ponteiro do item e página
 		tuplePointer = aux[0]
-		LastUsedPage = aux[1]
+		LastUsedPage = aux[2]
 		tuplePage = aux[1]
 
 		file.seek(4,0) #atualizando o LUP
@@ -122,10 +119,14 @@ def CreateToastFrame(pageName,offset,text):
 			aux = []
 			aux.append(pd_lower)
 			aux.append(offset)
+			aux.append(offset)
 			file.close()
 			return aux
 
 		remaining = 8*1024 - pd_lower
+		if(remaining == 0):
+			file.close() #salvando e fechando
+			return CreateToastFrame(pageName, offset+1, text)
 		insert = text[0:remaining]
 		file.seek(pd_lower, 0) # posição de início do pd_lower
 		file.write(insert.encode()) #inserindo o que dá
@@ -133,8 +134,13 @@ def CreateToastFrame(pageName,offset,text):
 		file.write((8*1024).to_bytes(2, 'little'))
 
 		CreateToastPage(pageName, offset+1) # cria uma nova página
-		file.close() #salando e fechando
-		return CreateToastFrame(pageName, offset+1, text[remaining:])
+		file.close() #salvando e fechando
+		
+		aux = []
+		aux.append(pd_lower)
+		aux.append(offset)
+		aux.append(CreateToastFrame(pageName, offset+1, text[remaining:])[2])
+		return aux
 	except IOError:
 		print('Error opening '+pageName+str(offset)+'Toast.dat')
 		return False
