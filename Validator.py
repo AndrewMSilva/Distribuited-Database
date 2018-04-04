@@ -86,8 +86,6 @@ def InsertInto(cmd):
                 query[2][i] = int(query[2][i])
             except ValueError:
                 continue
-
-        print(query)
         return query
     except ParseException as pe:
         return False

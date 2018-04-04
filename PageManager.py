@@ -47,7 +47,6 @@ def CreateFrame(pageName, offset, values): # n = o somatório dos bytes da tupla
 		# calculando somatório de bytes da tupla e verificando os tipos
 		tupleLen = 0
 		meta = GetMeta(pageName)
-		print(meta)
 		metaLen = meta[0]
 		meta = meta[1:]
 		for i in range(0,metaLen):

@@ -4,7 +4,7 @@ def CreateToastListPage(pageName, offset,LastUsedPage = 0):
 	try:
 		file = open('__pages__/'+pageName+str(offset)+'ToastList.dat', 'w+b')
 		pageLen = 8*1024 # 8KB
-		headerBytes = 8
+		headerBytes = 10
 		# criando o header
 		pd_lower = headerBytes # Offset para começar o espaço livre
 		ListLength = 0
@@ -12,7 +12,7 @@ def CreateToastListPage(pageName, offset,LastUsedPage = 0):
 		file.write(pd_lower.to_bytes(2,'little'))
 		file.write(ListLength.to_bytes(2,'little'))
 		file.write(LastUsedPage.to_bytes(2,'little'))
-		file.write(LastID.to_bytes(2,'little'))
+		file.write(LastID.to_bytes(4,'little'))
 		# inicializando espaços vazios
 		free = pageLen - headerBytes # bytes livres
 		file.write(bytes(free))
@@ -109,6 +109,7 @@ def CreateToastFrame(pageName,offset,text):
 		# verificando se há espaço na página
 		file.seek(0, 0) # posição de início do pd_lower
 		pd_lower = int.from_bytes(file.read(2), 'little') # lendo o ponteiro que indica onde colocar o próximo item
+		print(pd_lower)
 		tupleLen = len(text)
 		if((pd_lower + tupleLen) <= (8*1024 - pd_lower)):
 			# gerenciando pd_lower
@@ -135,7 +136,7 @@ def CreateToastFrame(pageName,offset,text):
 
 		CreateToastPage(pageName, offset+1) # cria uma nova página
 		file.close() #salvando e fechando
-		
+
 		aux = []
 		aux.append(pd_lower)
 		aux.append(offset)
