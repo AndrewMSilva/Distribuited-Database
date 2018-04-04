@@ -1,4 +1,4 @@
-#   Autor: Andrew Malta
+#   Autor: Andrew Malta e Gabriel Vassoler
 #   Obs: usar Python 3.x
 #   Comandos:
 #       COMANDO TABELA (ARGUMENTO1, ARGUMENTO2)
