@@ -62,7 +62,7 @@ def Select(cmd):
 		offset += 1
 	print()
 	for a in range(0,len(values)):
-		aux = str(a+1)
+		aux = '#'
 		for b in range(0,len(values[a])):
 			aux = aux +' | '+ str(values[a][b])
 		print(aux)
