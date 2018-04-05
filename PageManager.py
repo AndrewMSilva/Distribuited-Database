@@ -49,19 +49,31 @@ def CreateFrame(pageName, offset, values): # n = o somatório dos bytes da tupla
 		meta = GetMeta(pageName)
 		metaLen = meta[0]
 		meta = meta[1:]
+		if(metaLen != len(values)):
+			print('Table '+pageName+' have '+str(metaLen)+' attributes')
+			file.close()
+			return False
 		for i in range(0,metaLen):
 			if(meta[i][0] == 1 and isinstance(values[i], int)): # se ambos int
 				tupleLen += meta[i][1]
 			elif(meta[i][0] == 2 and isinstance(values[i], str)): # se char e str
 				if(meta[i][1] > MaxStringLen):
 					tupleLen += 4
-				else:
+				elif(len(values[i]) <= meta[i][1]):
 					tupleLen += meta[i][1]
+				else:
+					print('The attribute is char('+str(meta[i][1])+'), but has received '+str(len(values[i]))+' characteres') # a entrada e o tipo não combinam
+					file.close()
+					return False
 			elif(meta[i][0] == 3 and isinstance(values[i], str)): # se varchar e str
 				if(len(values[i]) > MaxStringLen):
 					tupleLen += 4
-				else:
+				elif(len(values[i]) <= meta[i][1]):
 					tupleLen += len(values[i])
+				else:
+					print('The attribute is varchar('+str(meta[i][1])+'), but has received '+str(len(values[i]))+' characteres') # a entrada e o tipo não combinam
+					file.close()
+					return False
 			else:
 				print('Entry and type do not match: check the sequence') # a entrada e o tipo não combinam
 				file.close()
@@ -124,7 +136,6 @@ def CreateFrame(pageName, offset, values): # n = o somatório dos bytes da tupla
 				file.write(values[i].encode())
 			else:
 				aux = CreateToastListFrame(pageName,0,values[i])
-				print(aux)
 				file.write(aux.to_bytes(4,'little'))
 		# atualizando tamanho da list	print(s)a de itens
 		file.seek(10, 0) # posição de início do tlist

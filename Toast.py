@@ -2,7 +2,6 @@
 
 def CreateToastListPage(pageName, offset,LastUsedPage = 0):
 	try:
-		print('bbbb')
 		file = open('__pages__/'+pageName+str(offset)+'ToastList.dat', 'w+b')
 		pageLen = 8*1024 # 8KB
 		headerBytes = 10

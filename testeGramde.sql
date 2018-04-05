@@ -14882,3 +14882,4 @@ insert into cliente('Lorem ipsum dolor sit amet, consectetur adipiscing elit. Na
 insert into cliente('Antônio hgghfdg', 5, 'que')
 insert into cliente('João dhusjaid', 8, 'que')
 insert into cliente('Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam sodales non metus sit amet condimentum. Phasellus sed nisi eu magna blandit feugiat in et nulla. Nunc tempus nunc convallis, ultrices ipsum in, eleifend orci. Phasellus nec leo augue. Etiam amet. ', 8, 'que')
+select * from cliente
