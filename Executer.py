@@ -37,6 +37,8 @@ def CreateTable(cmd):
 		values.append(v)
 	CreateMetaPage(cmd[0],values)
 	CreatePage(cmd[0],0)
+	CreateToastPage(cmd[0],0)
+	CreateToastListPage(cmd[0],0)
 
 def InsertInto(cmd):
 	if(not PageExist(cmd[0], 0)): #se já existe n cria denovo e retorna nada

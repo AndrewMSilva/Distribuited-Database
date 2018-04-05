@@ -2,6 +2,7 @@
 
 def CreateToastListPage(pageName, offset,LastUsedPage = 0):
 	try:
+		print('bbbb')
 		file = open('__pages__/'+pageName+str(offset)+'ToastList.dat', 'w+b')
 		pageLen = 8*1024 # 8KB
 		headerBytes = 10
@@ -57,14 +58,13 @@ def CreateToastListFrame(pageName, offset, text):
 		file.seek(6,0)
 		aux = tupleId + 1
 		file.write(aux.to_bytes(4, 'little')) #atualizando o ultimo ID
-
 		# verificando se há espaço na página
 		file.seek(0, 0) # posição de início do pd_lower
 		pd_lower = int.from_bytes(file.read(2), 'little') # lendo o ponteiro que indica onde colocar o próximo item
 
 		if((8*1024 - pd_lower) < (tupleLen)): # se não há espaço
-			CreateToastListPage(pageName, offset+1, lastUsedPage) # cria uma nova página
 			file.close()
+			CreateToastListPage(pageName, offset+1, lastUsedPage) # cria uma nova página
 			return CreateToastListFrame(pageName, offset+1, text) # insere a tupla na nova página
 
 		# gerenciando pd_lower
@@ -103,12 +103,11 @@ def CreateToastListFrame(pageName, offset, text):
 def CreateToastFrame(pageName,offset,text):
 	try:
 		file = open('__pages__/'+pageName+str(offset)+'Toast.dat', 'r+b')
-
 		# verificando se há espaço na página
-		file.seek(0, 0) # posição de início do pd_lower
+		pageLen = 8*1024
 		pd_lower = int.from_bytes(file.read(2), 'little') # lendo o ponteiro que indica onde colocar o próximo item
 		tupleLen = len(text)
-		if((pd_lower + tupleLen) <= (8*1024 - pd_lower)):
+		if(tupleLen <= (pageLen - pd_lower)):
 			# gerenciando pd_lower
 			file.seek(0, 0) # posição de início do pd_lower
 			file.write((pd_lower+tupleLen).to_bytes(2, 'little')) # atualizando o ponteiro
@@ -121,7 +120,7 @@ def CreateToastFrame(pageName,offset,text):
 			file.close()
 			return aux
 
-		remaining = 512 - pd_lower
+		remaining = pageLen - pd_lower
 		if(remaining == 0):
 			file.close() #salvando e fechando
 			return CreateToastFrame(pageName, offset+1, text)
@@ -129,7 +128,7 @@ def CreateToastFrame(pageName,offset,text):
 		file.seek(pd_lower, 0) # posição de início do pd_lower
 		file.write(insert.encode()) #inserindo o que dá
 		file.seek(0,0) #atualizando pd_lower pro máximo
-		file.write((8*1024).to_bytes(2, 'little'))
+		file.write((pageLen).to_bytes(2, 'little'))
 
 		CreateToastPage(pageName, offset+1) # cria uma nova página
 		file.close() #salvando e fechando

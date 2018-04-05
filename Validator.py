@@ -60,27 +60,18 @@ def CreateTable(cmd):
 
 def InsertInto(cmd):
     try:
-        # Object names and numbers match these regular expression
+        # Definindo tipos aceitos
         object_name = Regex('[a-zA-Z_]+')
         number = Regex('-?[0-9]+')
-        # A string is just something with quotes around it - PyParsing has a built in
         string = QuotedString("'") | QuotedString('"')
-
-        # A term is a number or a string
-        term = number | string
-
-        # The values we want to capture are either delimited lists of expressions we know about...
+        term = number | string # número ou string
+        # Definindo expressões regulares
         term_list = (delimitedList(term)).setResultsName('terms')
-
-        # Or just an expression we know about by itself
         table_name = object_name.setResultsName('table')
-
-        # And an SQL statement is just all of these pieces joined together with some string between them
+        # Validando SQL
         sql_stmt = "insert into " + table_name + "(" + term_list + ")"
-
         res = sql_stmt.parseString(cmd)
         query = [1, res.table, list(res.terms)]
-
         for i in range(0, len(query[2])):
             try:
                 query[2][i] = int(query[2][i])

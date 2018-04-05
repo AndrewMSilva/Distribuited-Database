@@ -34,8 +34,6 @@ def CreatePage(pageName, offset):
 		file.write(bytes(special))
 		# salvando e fechando
 		file.close()
-		CreateToastPage(pageName,0)
-		CreateToastListPage(pageName,0)
 		return True
 	except IOError:
 		print('Error creating '+pageName+str(offset)+'.dat')
@@ -117,7 +115,9 @@ def CreateFrame(pageName, offset, values): # n = o somatório dos bytes da tupla
 			elif(meta[i][0] == 3): # se for varchar
 				file.write(values[i].encode())
 			else:
-				file.write((CreateToastListFrame(pageName,0,values[i])).to_bytes(4,'little'))
+				aux = CreateToastListFrame(pageName,0,values[i])
+				print(aux)
+				file.write(aux.to_bytes(4,'little'))
 		# atualizando tamanho da list	print(s)a de itens
 		file.seek(10, 0) # posição de início do tlist
 		tlist = 1 + int.from_bytes(file.read(2), byteorder='little') # tamanho atual da lista
@@ -192,7 +192,6 @@ def GetFrames(pageName,offset):
 		file = open('__pages__/'+pageName+str(offset)+'.dat', 'rb')
 		data = []
 		meta = GetMeta(pageName)
-		print(meta)
 		metaLen = int(meta[0])
 		meta = meta[1:]
 		itemLen = 3 + 3*metaLen
