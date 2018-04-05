@@ -63,8 +63,8 @@ def CreateToastListFrame(pageName, offset, text):
 		pd_lower = int.from_bytes(file.read(2), 'little') # lendo o ponteiro que indica onde colocar o próximo item
 
 		if((8*1024 - pd_lower) < (tupleLen)): # se não há espaço
+			CreateToastListPage(pageName, offset+1, lastUsedPage) # cria uma nova página
 			file.close()
-			CreateToastListPage(pageName, offset+1,lastUsedPage) # cria uma nova página
 			return CreateToastListFrame(pageName, offset+1, text) # insere a tupla na nova página
 
 		# gerenciando pd_lower
@@ -88,13 +88,11 @@ def CreateToastListFrame(pageName, offset, text):
 		file.write(tuplePage.to_bytes(2, 'little'))
 		file.write(tuplePointer.to_bytes(2, 'little'))
 		file.write(itemSize.to_bytes(4, 'little'))
-
 		# atualizando tamanho da list	print(s)a de itens
 		file.seek(2, 0) # posição de início do tlist
 		tlist = 1 + int.from_bytes(file.read(2), byteorder='little') # tamanho atual da lista
 		file.seek(2, 0) # posição de início do tlist
 		file.write(tlist.to_bytes(2, 'little'))
-
 		# salvando e fechando
 		file.close()
 		return tupleId
@@ -109,7 +107,6 @@ def CreateToastFrame(pageName,offset,text):
 		# verificando se há espaço na página
 		file.seek(0, 0) # posição de início do pd_lower
 		pd_lower = int.from_bytes(file.read(2), 'little') # lendo o ponteiro que indica onde colocar o próximo item
-		print(pd_lower)
 		tupleLen = len(text)
 		if((pd_lower + tupleLen) <= (8*1024 - pd_lower)):
 			# gerenciando pd_lower
@@ -124,7 +121,7 @@ def CreateToastFrame(pageName,offset,text):
 			file.close()
 			return aux
 
-		remaining = 8*1024 - pd_lower
+		remaining = 512 - pd_lower
 		if(remaining == 0):
 			file.close() #salvando e fechando
 			return CreateToastFrame(pageName, offset+1, text)
@@ -151,9 +148,9 @@ def GetToastListFrame(id, pageName, offset = 0):
 
 	file.seek(2,0)
 	ListLength = int.from_bytes(file.read(2), byteorder='little')
-	file.seek(8,0)
+	file.seek(10,0)
 	for a in range(0,ListLength):
-		aux = 8 + 12*a
+		aux = 10 + 12*a
 		file.seek(aux,0)
 		idAtual = int.from_bytes(file.read(4), byteorder='little')
 		if(id == idAtual):
