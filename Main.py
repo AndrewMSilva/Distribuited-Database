@@ -21,6 +21,7 @@ while(True):
 	cmd = "show table   cliente    "
 	cmd = "delete from   cliente   where id  =  2 "
 	cmd = "insert into cliente('Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam sodales non metus sit amet condimentum. Phasellus sed nisi eu magna blandit feugiat in et nulla. Nunc tempus nunc convallis, ultrices ipsum in, eleifend orci. Phasellus nec leo augue. Etiam amet. ', 8, 'que')"
+	cmd = "select        *  from cliente  "
 	#cmd = input('>>> ')
 	cmd = Validator.Read(cmd) # valida o comando
 	if(isinstance(cmd,list)): # verifica se retornou uma lista

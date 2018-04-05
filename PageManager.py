@@ -1,5 +1,7 @@
 from Toast import *
 
+MaxStringLen = 255
+
 # PAGES SECTION #
 
 def PageExist(pageName, offset = ''):
@@ -51,9 +53,15 @@ def CreateFrame(pageName, offset, values): # n = o somatório dos bytes da tupla
 			if(meta[i][0] == 1 and isinstance(values[i], int)): # se ambos int
 				tupleLen += meta[i][1]
 			elif(meta[i][0] == 2 and isinstance(values[i], str)): # se char e str
-				tupleLen += meta[i][1]
+				if(meta[i][1] > MaxStringLen):
+					tupleLen += 4
+				else:
+					tupleLen += meta[i][1]
 			elif(meta[i][0] == 3 and isinstance(values[i], str)): # se varchar e str
-				tupleLen += len(values[i])
+				if(len(values[i]) > MaxStringLen):
+					tupleLen += 4
+				else:
+					tupleLen += len(values[i])
 			else:
 				print('Entry and type do not match: check the sequence') # a entrada e o tipo não combinam
 				file.close()
@@ -92,12 +100,12 @@ def CreateFrame(pageName, offset, values): # n = o somatório dos bytes da tupla
 				file.write(meta[i][0].to_bytes(1, 'little'))
 				file.write(meta[i][1].to_bytes(2, 'little'))
 			elif(meta[i][0] == 2): # se for char
-				if(meta[i][1] > 255):
+				if(meta[i][1] > MaxStringLen):
 					meta[i][0] = 4
 				file.write(meta[i][0].to_bytes(1, 'little'))
 				file.write(len(values[i]).to_bytes(2, 'little'))
 			else: # se for varchar
-				if(len(values[i]) > 255):
+				if(len(values[i]) > MaxStringLen):
 					meta[i][0] = 4
 				file.write(meta[i][0].to_bytes(1, 'little'))
 				file.write(len(values[i]).to_bytes(2, 'little'))
