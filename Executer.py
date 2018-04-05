@@ -60,7 +60,12 @@ def Select(cmd):
 	while(PageExist(cmd[0],offset)):
 		values = values + GetFrames(cmd[0],offset)
 		offset += 1
-	print(values)
+	print()
+	for a in range(0,len(values)):
+		aux = str(a+1)
+		for b in range(0,len(values[a])):
+			aux = aux +' | '+ str(values[a][b])
+		print(aux)
 	return
 
 def ShowTable(cmd):

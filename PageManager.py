@@ -238,7 +238,7 @@ def GetFrames(pageName,offset):
 					aux.append(file.read(attrLen[i]).decode())
 					file.seek(file.tell()+meta[i][1]-attrLen[i], 0)
 				elif(attrType[i] == 3): #varchar
-					aux.append(file.read(1 + attrLen[i]).decode())
+					aux.append(file.read(attrLen[i]).decode())
 				else: #toast item
 					p = int.from_bytes(file.read(4), byteorder='little') #tamanho do campo
 					a = GetToastListFrame(p, pageName)
