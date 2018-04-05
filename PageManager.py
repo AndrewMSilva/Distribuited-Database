@@ -187,48 +187,6 @@ def DeleteFrame(pageName, offset, values):
 		print('Error opening '+pageName+str(offset)+'.dat')
 		return False
 
-def CreateMetaPage(pageName,attr): # [[type,typeLen,nameLen,name],...] | cria a página com os campos da tupla
-	try:
-		file = open('__pages__/'+pageName+'meta.dat', 'wb')
-		# pega os atributos já verificados e insere um por vez
-		pageLen = 8*1024 # 8KB
-		metaLen = len(attr)
-		file.write(metaLen.to_bytes(1,'little')) # quantidade de atributos do meta
-		for a in attr:
-			file.write(a[0].to_bytes(1,'little')) #tipo do campo
-			file.write(a[1].to_bytes(4,'little')) #tamanho do campo
-			file.write(a[2].to_bytes(1,'little')) #tamanho do nome
-			file.write(a[3].encode()) #pra string
-		file.write(bytes(pageLen - metaLen))
-		# salvando e fechando
-		file.close()
-		return True
-	except IOError:
-		print('Error creating '+pageName+'meta.dat') #não deu pra criar a página
-		return False
-
-def GetMeta(pageName): #pegar os atributos da tabela
-	try:
-		file = open('__pages__/'+pageName+'meta.dat', 'rb')
-		attr = []
-		metaLen = int.from_bytes(file.read(1), byteorder='little') # tamanho do meta
-		attr.append(metaLen)
-		for i in range(0, metaLen):
-			v = []
-			a = int.from_bytes(file.read(1), byteorder='little') #tipo do primeiro campo, se não existir retorna um vetor vazio
-			v.append(a)
-			a = int.from_bytes(file.read(4), byteorder='little') #tamanho do campo
-			v.append(a)
-			a = int.from_bytes(file.read(1), byteorder='little')#tamanho do nome do campo
-			a = file.read(a).decode()
-			v.append(a)
-			attr.append(v)
-		file.close()
-		return attr
-	except IOError:
-		print('Error opening '+pageName+'meta.dat') #página não existe
-		return False
-
 def GetFrames(pageName,offset):
 	try:
 		file = open('__pages__/'+pageName+str(offset)+'.dat', 'rb')
@@ -272,4 +230,48 @@ def GetFrames(pageName,offset):
 		return data
 	except IOError:
 		print('Error opening '+pageName+str(offset)+'.dat') #página não existe
+		return False
+
+def CreateMetaPage(pageName,attr): # [[type,typeLen,nameLen,name],...] | cria a página com os campos da tupla
+	try:
+		file = open('__pages__/'+pageName+'meta.dat', 'wb')
+		# pega os atributos já verificados e insere um por vez
+		pageLen = 8*1024 # 8KB
+		metaLen = len(attr)
+		file.write(metaLen.to_bytes(1,'little')) # quantidade de atributos do meta
+		attrLen = 0
+		for a in attr:
+			file.write(a[0].to_bytes(1,'little')) #tipo do campo
+			file.write(a[1].to_bytes(4,'little')) #tamanho do campo
+			file.write(a[2].to_bytes(1,'little')) #tamanho do nome
+			file.write(a[3].encode()) #pra string
+			attrLen += 6 + len(a[3])
+		file.write(bytes(pageLen - metaLen - attrLen))
+		# salvando e fechando
+		file.close()
+		return True
+	except IOError:
+		print('Error creating '+pageName+'meta.dat') #não deu pra criar a página
+		return False
+
+def GetMeta(pageName): #pegar os atributos da tabela
+	try:
+		file = open('__pages__/'+pageName+'meta.dat', 'rb')
+		attr = []
+		metaLen = int.from_bytes(file.read(1), byteorder='little') # tamanho do meta
+		attr.append(metaLen)
+		for i in range(0, metaLen):
+			v = []
+			a = int.from_bytes(file.read(1), byteorder='little') #tipo do primeiro campo, se não existir retorna um vetor vazio
+			v.append(a)
+			a = int.from_bytes(file.read(4), byteorder='little') #tamanho do campo
+			v.append(a)
+			a = int.from_bytes(file.read(1), byteorder='little')#tamanho do nome do campo
+			a = file.read(a).decode()
+			v.append(a)
+			attr.append(v)
+		file.close()
+		return attr
+	except IOError:
+		print('Error opening '+pageName+'meta.dat') #página não existe
 		return False
