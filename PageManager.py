@@ -246,11 +246,6 @@ def GetFrames(pageName,offset):
 			data.append(aux)
 		data = list(data)
 
-		meta = GetMeta(pageName)
-		aux = '\n|'
-		for a in range(1,len(meta)):
-			aux = aux + meta[a][2] + ' | '
-		print(aux)
 		return data
 	except IOError:
 		print('Error opening '+pageName+str(offset)+'.dat') #página não existe

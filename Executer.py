@@ -1,5 +1,7 @@
 from PageManager import *
 
+AttrMaxNum = 10
+
 def Read(cmd):
     if(cmd[0] == 0):
     	CreateTable(cmd[1:])
@@ -35,6 +37,9 @@ def CreateTable(cmd):
 			v.append(len(a[0])) #tamanho do nome do campo
 			v.append(a[0]) #nome do campo
 		values.append(v)
+	if(len(values) > AttrMaxNum):
+		print('Maximum of attributes is '+str(AttrMaxNum))
+		return
 	CreateMetaPage(cmd[0],values)
 	CreatePage(cmd[0],0)
 	CreateToastPage(cmd[0],0)
@@ -60,12 +65,16 @@ def Select(cmd):
 	while(PageExist(cmd[0],offset)):
 		values = values + GetFrames(cmd[0],offset)
 		offset += 1
-	print()
-	for a in range(0,len(values)):
-		aux = '#'
-		for b in range(0,len(values[a])):
-			aux = aux +' | '+ str(values[a][b])
-		print(aux)
+	meta = GetMeta(cmd[0])
+	aux = '\n| # | '
+	for a in range(1, len(meta)):
+		aux = aux + meta[a][2] + ' | '
+	print(aux)
+	for i in range(0,len(values)):
+		aux = '| '+str(i+1)
+		for j in range(0,len(values[i])):
+			aux = aux +' | '+ str(values[i][j])
+		print(aux+' |')
 	return
 
 def ShowTable(cmd):
