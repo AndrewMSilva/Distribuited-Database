@@ -122,6 +122,8 @@ def CreateToastFrame(pageName,offset,text):
 		remaining = pageLen - pd_lower
 		if(remaining == 0):
 			file.close() #salvando e fechando
+			if(!PageExist(pageName+str(offset+1)+'Toast')):
+				CreateToastPage(pageName, offset+1)
 			return CreateToastFrame(pageName, offset+1, text)
 		insert = text[0:remaining]
 		file.seek(pd_lower, 0) # posição de início do pd_lower
