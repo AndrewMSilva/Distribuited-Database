@@ -1,6 +1,8 @@
 from PageManager import *
 
 AttrMaxNum = 10
+CharMax = 2000
+CharMin = 1
 
 def Read(cmd):
     if(cmd[0] == 0):
@@ -21,6 +23,7 @@ def CreateTable(cmd):
 	values = []
 	for a in cmd[1:]: #pega os atributos do comando
 		v = []
+		aux = CharMin
 		if(a[1] == 'int'): #caso o atributo seja inteiro
 			v.append(1)
 			v.append(4) #tamanho fixo, mas será desconsiderado
@@ -28,14 +31,19 @@ def CreateTable(cmd):
 			v.append(a[0]) #nome do campo
 		elif(a[1][0:4] == 'char'): #caso seja char
 			v.append(2)
-			v.append(int((a[1].split('(')[1].split(')'))[0])) #tamanho do char
+			aux = int((a[1].split('(')[1].split(')'))[0])
+			v.append(aux) #tamanho do char
 			v.append(len(a[0]))#tamanho do nome do campo
 			v.append(a[0])#nome do campo
 		else: #caso seja varchar
 			v.append(3)
-			v.append(int((a[1].split('(')[1].split(')'))[0])) #tamanho do char
+			aux = int((a[1].split('(')[1].split(')'))[0])
+			v.append(aux) #tamanho do varchar
 			v.append(len(a[0])) #tamanho do nome do campo
 			v.append(a[0]) #nome do campo
+		if(aux < CharMin or aux > CharMax):
+			print('Varchar size is '+str(CharMin)+' to '+str(CharMax))
+			return
 		values.append(v)
 	if(len(values) > AttrMaxNum):
 		print('Maximum of attributes is '+str(AttrMaxNum))
