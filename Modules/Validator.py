@@ -3,17 +3,18 @@ from pyparsing import *
 def Read(cmd=False):
     # Acionando validadores
     if(cmd != ''):
-        if(cmd[0:12] == 'create table'):
+        splited = (cmd+' ').split()
+        if(splited[0] == 'create' and splited[1] == 'table'):
             cmd = CreateTable(cmd[12:])
-        elif(cmd[0:11] == 'insert into'):
+        elif(splited[0] == 'insert' and splited[1] == 'into'):
             cmd = InsertInto(cmd)
-        elif(cmd[0:11] == 'delete from'):
+        elif(splited[0] == 'delete' and splited[1] == 'from'):
             cmd = DeleteFrom(cmd[11:])
-        elif(cmd[0:6] == 'select'):
+        elif(splited[0] == 'select'):
             cmd = Select(cmd[6:])
-        elif(cmd[0:10] == 'show table'):
+        elif(splited[0] == 'show' and splited[1] == 'table'):
             cmd = ShowTable(cmd[10:])
-        elif(cmd == 'exit'):
+        elif(splited[0] == 'exit'):
             exit()
         else:
             print('Command not found:',cmd)
