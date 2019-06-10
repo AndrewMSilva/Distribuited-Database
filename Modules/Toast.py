@@ -1,9 +1,11 @@
 # TOAST SECTION #
-from PageManager import *
+from Modules.PageManager import *
+
+PATH = './__pages__/'
 
 def CreateToastListPage(pageName, offset,LastUsedPage = 0):
 	try:
-		file = open('__pages__/'+pageName+str(offset)+'ToastList.dat', 'w+b')
+		file = open(PATH+pageName+str(offset)+'ToastList.dat', 'w+b')
 		pageLen = 8*1024 # 8KB
 		headerBytes = 10
 		# criando o header
@@ -26,7 +28,7 @@ def CreateToastListPage(pageName, offset,LastUsedPage = 0):
 
 def CreateToastPage(pageName, offset):
 	try:
-		file = open('__pages__/'+pageName+str(offset)+'Toast.dat', 'w+b')
+		file = open(PATH+pageName+str(offset)+'Toast.dat', 'w+b')
 		pageLen = 8*1024 # 8KB
 		headerBytes = 2
 		# criando o header
@@ -44,7 +46,7 @@ def CreateToastPage(pageName, offset):
 
 def CreateToastListFrame(pageName, offset, text):
 	try:
-		file = open('__pages__/'+pageName+str(offset)+'ToastList.dat', 'r+b')
+		file = open(PATH+pageName+str(offset)+'ToastList.dat', 'r+b')
 		# calculando somatório de bytes da tupla e inserindo o nodo da lista e o nodo na pagina de toast
 		file.seek(6,0)
 		tupleLen = 12
@@ -102,7 +104,7 @@ def CreateToastListFrame(pageName, offset, text):
 
 def CreateToastFrame(pageName,offset,text):
 	try:
-		file = open('__pages__/'+pageName+str(offset)+'Toast.dat', 'r+b')
+		file = open(PATH+pageName+str(offset)+'Toast.dat', 'r+b')
 		# verificando se há espaço na página
 		pageLen = 8*1024
 		pd_lower = int.from_bytes(file.read(2), 'little') # lendo o ponteiro que indica onde colocar o próximo item
@@ -143,7 +145,7 @@ def CreateToastFrame(pageName,offset,text):
 		return False
 
 def GetToastListFrame(id, pageName, offset = 0):
-	file = open('__pages__/'+pageName+str(offset)+'ToastList.dat', 'r+b')
+	file = open(PATH+pageName+str(offset)+'ToastList.dat', 'r+b')
 
 	file.seek(2,0)
 	ListLength = int.from_bytes(file.read(2), byteorder='little')
@@ -165,7 +167,7 @@ def GetToastListFrame(id, pageName, offset = 0):
 
 def GetToastFrame(pageName,offset,pointer,size,text = ''): #envie text como ''
 	try:
-		file = open('__pages__/'+pageName+str(offset)+'Toast.dat', 'r+b')
+		file = open(PATH+pageName+str(offset)+'Toast.dat', 'r+b')
 
 		file.seek(pointer, 0)
 

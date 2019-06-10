@@ -1,4 +1,4 @@
-from PageManager import *
+from Modules.PageManager import *
 
 AttrMaxNum = 10
 CharMax = 2000

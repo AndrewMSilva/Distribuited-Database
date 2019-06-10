@@ -1,7 +1,7 @@
 from pyparsing import *
 
 def Read(cmd=False):
-    # acionando valiadores
+    # Acionando validadores
     if(cmd != ''):
         if(cmd[0:12] == 'create table'):
             cmd = CreateTable(cmd[12:])

@@ -1,4 +1,6 @@
-from Toast import *
+from Modules.Toast import *
+
+PATH = './__pages__/'
 
 MaxStringLen = 255
 
@@ -6,7 +8,7 @@ MaxStringLen = 255
 
 def PageExist(pageName, offset = ''):
 	try:
-		file = open('__pages__/'+pageName+str(offset)+'.dat', 'rb')
+		file = open(PATH+pageName+str(offset)+'.dat', 'rb')
 		file.close()
 		return True
 	except IOError:
@@ -14,7 +16,7 @@ def PageExist(pageName, offset = ''):
 
 def CreatePage(pageName, offset):
 	try:
-		file = open('__pages__/'+pageName+str(offset)+'.dat', 'w+b')
+		file = open(PATH+pageName+str(offset)+'.dat', 'w+b')
 		pageLen = 8*1024 # 8KB
 		special = 0 # bytes do frame especial
 		headerBytes = 12
@@ -43,7 +45,7 @@ def CreatePage(pageName, offset):
 
 def CreateFrame(pageName, offset, values): # n = o somatório dos bytes da tupla
 	try:
-		file = open('__pages__/'+pageName+str(offset)+'.dat', 'r+b')
+		file = open(PATH+pageName+str(offset)+'.dat', 'r+b')
 		# calculando somatório de bytes da tupla e verificando os tipos
 		tupleLen = 0
 		meta = GetMeta(pageName)
@@ -152,7 +154,7 @@ def CreateFrame(pageName, offset, values): # n = o somatório dos bytes da tupla
 
 def DeleteFrame(pageName, offset, values):
 	try:
-		file = open('__pages__/'+pageName+str(offset)+'.dat', 'r+b')
+		file = open(PATH+pageName+str(offset)+'.dat', 'r+b')
 		meta = GetMeta(pageName)
 		metaLen = meta[0]
 		meta = meta[1:]
@@ -208,7 +210,7 @@ def DeleteFrame(pageName, offset, values):
 
 def GetFrames(pageName,offset):
 	try:
-		file = open('__pages__/'+pageName+str(offset)+'.dat', 'rb')
+		file = open(PATH+pageName+str(offset)+'.dat', 'rb')
 		data = []
 		meta = GetMeta(pageName)
 		metaLen = int(meta[0])
@@ -253,7 +255,7 @@ def GetFrames(pageName,offset):
 
 def CreateMetaPage(pageName,attr): # [[type,typeLen,nameLen,name],...] | cria a página com os campos da tupla
 	try:
-		file = open('__pages__/'+pageName+'meta.dat', 'wb')
+		file = open(PATH+pageName+'meta.dat', 'wb')
 		# pega os atributos já verificados e insere um por vez
 		pageLen = 8*1024 # 8KB
 		metaLen = len(attr)
@@ -275,7 +277,7 @@ def CreateMetaPage(pageName,attr): # [[type,typeLen,nameLen,name],...] | cria a 
 
 def GetMeta(pageName): #pegar os atributos da tabela
 	try:
-		file = open('__pages__/'+pageName+'meta.dat', 'rb')
+		file = open(PATH+pageName+'meta.dat', 'rb')
 		attr = []
 		metaLen = int.from_bytes(file.read(1), byteorder='little') # tamanho do meta
 		attr.append(metaLen)

@@ -1,5 +1,3 @@
-#   Autor: Andrew Malta e Gabriel Vassoler
-#   Obs: usar Python 3.x - ACENTOS NÃO SÃO ACEITOS EM AMBIENTE WINDOWS
 #   Comandos:
 #       COMANDO TABELA (ARGUMENTO1, ARGUMENTO2)
 #       create table cliente (id int, nome varchar(30))
@@ -9,10 +7,10 @@
 #		show table cliente -> mostra os campos da tabela
 #       exit
 
-import Validator
-import Executer
+import Modules.Validator as Validator
+import Modules.Executer as Executer
 
-print('\nWelcome to best SGBD on universe! Enjoy it xD')
+print('\nWelcome to Distribuited Relational Database, enjoy it!')
 print('Based on Postgres 8.0')
 while(True):
 	try:
@@ -22,4 +20,3 @@ while(True):
 	cmd = Validator.Read(cmd) # valida o comando
 	if(isinstance(cmd,list)): # verifica se retornou uma lista
 		Executer.Read(cmd) # executa o comando
-		#break # usar apenas para testar um comando específico como parâmetro
