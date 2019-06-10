@@ -8,7 +8,7 @@
 #		show table cliente -> mostra os campos da tabela
 #       exit
 
-print('\nWelcome to Distribuited Relational Database, enjoy it!')
+print('\nWelcome to Distribuited Relational Database!')
 import Modules.Validator as Validator
 import Modules.Executer as Executer
 import Modules.Communicator as Communicator

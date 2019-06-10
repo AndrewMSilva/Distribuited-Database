@@ -33,7 +33,6 @@ GET_DATA  = 5
 GIVE_DATA = 6
 NOT_FOUND = 404
 
-
 ''' Message methods '''
 
 def EncodeMessage(type, content):
@@ -56,9 +55,13 @@ def SendMessage(ip, content, type):
     # Finding the destination
     found = False
     for i in GROUP:
-        if ip == GROUP[i]['IP']:
+        if ip == GROUP[i]:
             found = True
-            GROUP[i]['OutputQueue'].append(enconded_message)
+            enconded_message = EncodeMessage(type, content)
+            socket = socket(AF_INET, SOCK_STREAM)
+            socket.connect((ip, PORT))
+            socket.send(enconded_message)
+            socket.close()
             break
     if not found:
         print('The destination is not a group member')
@@ -95,26 +98,21 @@ def Agroup(ip, id=None, type=AGROUP):
         if GROUP[i] == ip:
             return
     # Creating connection
-    conn = socket(AF_INET, SOCK_STREAM)
-    try:
-        conn.connect((ip, PORT))
-    except Exception as e:
-        print('Error:', e)
-        return
+    SendAgroupMessage(ip, type)
 
     if not id:
         id = len(GROUP)+1
     GROUP[id] = ip
 
-def SendAgroupMessage(id, type=AGROUP):
+def SendAgroupMessage(ip, type=AGROUP):
     content = str(ID) + ':' + str(len(GROUP))
     for i in GROUP:
-        if GROUP[i] != GROUP[id]:
+        if GROUP[i] != ip:
             content += ' ' + str(i) + ':' + GROUP[i]['IP']
 
     enconded_message = EncodeMessage(type, content)
     socket = socket(AF_INET, SOCK_STREAM)
-    socket.connect((GROUP[id], PORT))
+    socket.connect((ip, PORT))
     socket.send(enconded_message)
     socket.close()
 
@@ -124,8 +122,9 @@ def Include(ip):
 def Group():
     if not GROUP:
         print('There aren\'t connections')
-    for i in GROUP:
-        print(i, '->', GROUP[i]['IP'])
+    else:
+        for i in GROUP:
+            print('ID:', i, 'IP', GROUP[i])
 
 def UpdateGroup(id, content):
     content = content.split()[1:]
