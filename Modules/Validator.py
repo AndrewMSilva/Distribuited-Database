@@ -1,29 +1,5 @@
 from pyparsing import *
 
-def Read(cmd=False):
-    # Acionando validadores
-    if(cmd != ''):
-        splited = (cmd+' ').split()
-        if(splited[0] == 'create' and splited[1] == 'table'):
-            cmd = CreateTable(cmd[12:])
-        elif(splited[0] == 'insert' and splited[1] == 'into'):
-            cmd = InsertInto(cmd)
-        elif(splited[0] == 'delete' and splited[1] == 'from'):
-            cmd = DeleteFrom(cmd[11:])
-        elif(splited[0] == 'select'):
-            cmd = Select(cmd[6:])
-        elif(splited[0] == 'show' and splited[1] == 'table'):
-            cmd = ShowTable(cmd[10:])
-        elif(splited[0] == 'exit'):
-            exit()
-        else:
-            print('Command not found:',cmd)
-            return False
-        if(not cmd):
-            print('Sintax error')
-
-        return cmd
-
 def CreateTable(cmd):
     if(cmd == '' or cmd[0] != ' '):
         return False

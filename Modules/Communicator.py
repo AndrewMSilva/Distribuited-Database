@@ -58,10 +58,10 @@ def SendMessage(ip, content, type):
         if ip == GROUP[i]:
             found = True
             enconded_message = EncodeMessage(type, content)
-            socket = socket(AF_INET, SOCK_STREAM)
-            socket.connect((ip, PORT))
-            socket.send(enconded_message)
-            socket.close()
+            tcp = socket(AF_INET, SOCK_STREAM)
+            tcp.connect((ip, PORT))
+            tcp.send(enconded_message)
+            tcp.close()
             break
     if not found:
         print('The destination is not a group member')
@@ -111,10 +111,11 @@ def SendAgroupMessage(ip, type=AGROUP):
             content += ' ' + str(i) + ':' + GROUP[i]['IP']
 
     enconded_message = EncodeMessage(type, content)
-    socket = socket(AF_INET, SOCK_STREAM)
-    socket.connect((ip, PORT))
-    socket.send(enconded_message)
-    socket.close()
+    try
+    tcp = socket(AF_INET, SOCK_STREAM)
+    tcp.connect((ip, PORT))
+    tcp.send(enconded_message)
+    tcp.close()
 
 def Include(ip):
     Agroup(ip, type=INCLUDE)
