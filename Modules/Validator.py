@@ -1,11 +1,43 @@
 from pyparsing import *
+import Modules.Communicator as Communicator
+
+def Read(cmd):
+    # Acionando validadores
+    if(cmd):
+        splited = (cmd+' ').split()
+        if splited[0] == 'include':
+            if len(splited) != 2:
+                cmd = False
+            else:
+                cmd = [Communicator.INCLUDE, cmd[1]]
+        elif(splited[0] == 'create' and splited[1] == 'table'):
+            cmd = CreateTable(cmd[12:])
+        elif(splited[0] == 'insert' and splited[1] == 'into'):
+            cmd = InsertInto(cmd)
+        elif(splited[0] == 'delete' and splited[1] == 'from'):
+            cmd = DeleteFrom(cmd[11:])
+        elif(splited[0] == 'select'):
+            cmd = Select(cmd[6:])
+        elif(splited[0] == 'show' and splited[1] == 'table'):
+            cmd = ShowTable(cmd[10:])
+        elif(splited[0] == 'exit'):
+            exit()
+        else:
+            print('Command not found:', cmd)
+            return False
+
+        if not cmd:
+            print('Sintax error')
+            return False
+    
+    return cmd
 
 def CreateTable(cmd):
     if(cmd == '' or cmd[0] != ' '):
         return False
     i = 1
     status = -1
-    attr = [0,False]
+    attr = [Communicator.CREATE_TABLE, False]
     for j in range(i,len(cmd)):
         if(status == -1 and cmd[j] != ' '): # procurando onde começa o nome da tabela
             status = 0
@@ -48,7 +80,7 @@ def InsertInto(cmd):
         # Validando SQL
         sql_stmt = "insert into " + table_name + "(" + term_list + ")"
         res = sql_stmt.parseString(cmd)
-        query = [1, res.table, list(res.terms)]
+        query = [Communicator.INSERT_INTO, res.table, list(res.terms)]
         for i in range(0, len(query[2])):
             try:
                 query[2][i] = int(query[2][i])
@@ -63,7 +95,7 @@ def DeleteFrom(cmd):
         return False
     i = 1
     status = -1
-    attr = [2,False]
+    attr = [Communicator.DELETE_FROM, False]
     values = []
     for j in range(i,len(cmd)):
         if(status == -1 and cmd[j] != ' '): # procurando onde começa o nome da tabela
@@ -93,7 +125,7 @@ def Select(cmd):
     if(cmd[0] != ' '):
         return False
     i = 1
-    attr = [3,False]
+    attr = [Communicator.SELECT, False]
     status = 0
     for j in range(i,len(cmd)):
         if(status == 0 and cmd[j] != ' '): # procurando onde começam os campos
@@ -122,7 +154,7 @@ def ShowTable(cmd):
         return False
     i = 1
     status = 0
-    attr = [4,False]
+    attr = [Communicator.SHOW_TABLE, False]
     for j in range(i,len(cmd)):
         if(status == 0 and cmd[j] != ' '): # procurando onde começa o nome da tabela
             status = 1

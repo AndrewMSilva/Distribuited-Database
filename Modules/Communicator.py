@@ -5,13 +5,13 @@ import time
 
 # Main settings
 LOCAL_IP = gethostbyname(gethostname())
-PORT     = 5050
+PORT     = 5918
 RUNNING  = True
 
 # Group controllers
-PASSWORD = hashlib.sha1('Aa@215?'.encode('latin1')).hexdigest()
-ID       = 0
-GROUP    = {}
+TOKEN = hashlib.sha1('Aa@215?'.encode('latin1')).hexdigest()
+GROUP = {}
+ID    = 0
 
 # Events controllers
 EVENTS = []
@@ -25,22 +25,32 @@ BUFFER_LEN = 1024
 TIMEOUT    = 0.1
 
 # Message types
-INCLUDE   = 1
-AGROUP    = 2
-EVENT     = 3
-SET_DATA  = 4
-GET_DATA  = 5
-GIVE_DATA = 6
-NOT_FOUND = 404
+INCLUDE      = 0
+AGROUP       = 1
+CREATE_TABLE = 2
+INSERT_INTO  = 3
+DELETE_FROM  = 4
+SELECT       = 5
+SHOW_TABLE   = 6
+
+EVENT        = 3
+SET_DATA     = 4
+GET_DATA     = 5
+GIVE_DATA    = 6
+NOT_FOUND    = 404
+
+def Start():
+    listener = Thread(target=Listener)
+    listener.start()
 
 ''' Message methods '''
 
 def EncodeMessage(type, content):
-    message = PASSWORD + str(type) + content
+    message = TOKEN + str(type) + content
     return message.encode('latin1')
 
 def DecodeMessage(enconded_message):
-    token_len = len(PASSWORD)
+    token_len = len(TOKEN)
     enconded_message = enconded_message.decode('latin1')
     try:
         token = str(enconded_message[:token_len])
@@ -48,7 +58,7 @@ def DecodeMessage(enconded_message):
     except:
         return False
     content = enconded_message[token_len+1:]
-    return {'Password': token, 'Type': type, 'Content': content}
+    return {'TOKEN': token, 'Type': type, 'Content': content}
 
 def SendMessage(ip, content, type):
     enconded_message = EncodeMessage(type, content)
@@ -58,18 +68,16 @@ def SendMessage(ip, content, type):
         if ip == GROUP[i]:
             found = True
             enconded_message = EncodeMessage(type, content)
-            tcp = socket(AF_INET, SOCK_STREAM)
-            tcp.connect((ip, PORT))
-            tcp.send(enconded_message)
-            tcp.close()
+            try:
+                tcp = socket(AF_INET, SOCK_STREAM)
+                tcp.connect((ip, PORT))
+                tcp.send(enconded_message)
+                tcp.close()
+            except Exception as e:
+                print('Error:', e)
             break
     if not found:
         print('The destination is not a group member')
-
-def Broadcast(content, type):
-    enconded_message = EncodeMessage(type, content)
-    for i in GROUP:
-        GROUP[i]['OutputQueue'].append(enconded_message)
 
 def ReceiveMessage(conn):
     enconded_message = conn.recv(BUFFER_LEN)
@@ -79,7 +87,7 @@ def ReceiveMessage(conn):
         conn.close()
         return False
     # Authenticating message
-    elif message['Password'] != PASSWORD:
+    elif message['TOKEN'] != TOKEN:
         print('Access denied: authentication falied')
         conn.close()
         return False
@@ -111,11 +119,13 @@ def SendAgroupMessage(ip, type=AGROUP):
             content += ' ' + str(i) + ':' + GROUP[i]['IP']
 
     enconded_message = EncodeMessage(type, content)
-    try
-    tcp = socket(AF_INET, SOCK_STREAM)
-    tcp.connect((ip, PORT))
-    tcp.send(enconded_message)
-    tcp.close()
+    try:
+        tcp = socket(AF_INET, SOCK_STREAM)
+        tcp.connect((ip, PORT))
+        tcp.send(enconded_message)
+        tcp.close()
+    except Exception as e:
+        print('Error:', e)
 
 def Include(ip):
     Agroup(ip, type=INCLUDE)
@@ -140,6 +150,25 @@ def UpdateGroup(id, content):
                 Agroup(ip, id)
 
 
+def Connection(conn, addr):
+    message = ReceiveMessage(conn)
+    if message: 
+        if message['Type'] == AGROUP or message['Type'] == INCLUDE:
+            # Verifying the new connection
+            content = message['Content'].split()[0].split(':')
+            id = int(content[1])
+            ip = addr[0]
+            for i in GROUP:
+                if ip == GROUP[i]['IP']:
+                    conn.close()
+                    continue
+            # Creating a new connection
+            GROUP[id] = ip
+            UpdateGroup(id, message['Content'])
+            if message['Type'] == INCLUDE:
+                ID = int(content[2])
+    conn.close()
+
 def Listener():
     TCP = socket(AF_INET, SOCK_STREAM)
     TCP.bind((LOCAL_IP, PORT))
@@ -148,22 +177,8 @@ def Listener():
     TCP.listen(1)
     while RUNNING:
         conn, addr = TCP.accept()
-        message = ReceiveMessage(conn)
-        if not message: continue
-        if message['Type'] == AGROUP or message['Type'] == INCLUDE:
-            # Creating a new connection
-            content = message['Content'].split()[0].split(':')
-            id = int(content[1])
-            ip = addr[0]
-            for i in GROUP:
-                if ip == GROUP[i]['IP']:
-                    conn.close()
-                    continue
-            GROUP[id] = ip
-            UpdateGroup(id, message['Content'])
-            if message['Type'] == INCLUDE:
-                ID = int(content[2])
-        conn.close()
+        connection = Thread(target=Connection, args=[conn, addr,])
+        connection.start()
     TCP.close()
 
 ''' Synchronized events methods '''
@@ -238,7 +253,3 @@ def ShowData():
         print('There aren\'t storaged data')
     for key, content in DATA.items():
         print(key, content)
-
-# Starting communicator
-listener = Thread(target=Listener)
-listener.start()

@@ -1,20 +1,29 @@
+import Modules.Validator as Validator
 from Modules.PageManager import *
 
 AttrMaxNum = 10
 CharMax = 2000
 CharMin = 1
 
-def Read(cmd):
-    if(cmd[0] == 0):
-    	CreateTable(cmd[1:])
-    elif(cmd[0] == 1):
-    	InsertInto(cmd[1:])
-    elif(cmd[0] == 2):
-    	DeleteFrom(cmd[1:])
-    elif(cmd[0] == 3):
-    	Select(cmd[1:])
-    elif(cmd[0] == 4):
-    	ShowTable(cmd[1:])
+Communicator = Validator.Communicator
+Communicator.Start()
+
+def Execute(cmd):
+	cmd = Validator.Read(cmd)
+
+	if(isinstance(cmd,list)):
+		if cmd[0] == Communicator.INCLUDE:
+			Communicator.Include(cmd[1])
+		elif cmd[0] == Communicator.CREATE_TABLE:
+			CreateTable(cmd[1:])
+		elif cmd[0] == Communicator.INSERT_INTO:
+			InsertInto(cmd[1:])
+		elif cmd[0] == Communicator.DELETE_FROM:
+			DeleteFrom(cmd[1:])
+		elif cmd[0] == Communicator.SELECT:
+			Select(cmd[1:])
+		elif cmd[0] == Communicator.SHOW_TABLE:
+			ShowTable(cmd[1:])
 
 def CreateTable(cmd):
 	if(PageExist(cmd[0]+'meta')): #se já existe n cria denovo e retorna nada
