@@ -1,3 +1,4 @@
+import Settings.Function as Function
 from socket import socket, gethostbyname, gethostname, AF_INET, SOCK_STREAM
 from threading import Thread
 import hashlib
@@ -6,11 +7,11 @@ import time
 # Main settings
 LOCAL_IP = gethostbyname(gethostname())
 PORT     = 5918
-RUNNING  = True
+Running  = True
 
 # Group controllers
 TOKEN = hashlib.sha1('Aa@215?'.encode('latin1')).hexdigest()
-GROUP = {}
+Group = {}
 ID    = 0
 
 # Events controllers
@@ -18,25 +19,17 @@ EVENTS = []
 
 # DHT controllers
 DHT   = False
-DATA  = {}
+Data  = {}
 
 # Massage configs
 BUFFER_LEN = 1024
 TIMEOUT    = 0.1
 
 # Message types
-INCLUDE      = 0
-AGROUP       = 1
-CREATE_TABLE = 2
-INSERT_INTO  = 3
-DELETE_FROM  = 4
-SELECT       = 5
-SHOW_TABLE   = 6
-
 EVENT        = 3
-SET_DATA     = 4
-GET_DATA     = 5
-GIVE_DATA    = 6
+SET_Data     = 4
+GET_Data     = 5
+GIVE_Data    = 6
 NOT_FOUND    = 404
 
 def Start():
@@ -64,8 +57,8 @@ def SendMessage(ip, content, type):
     enconded_message = EncodeMessage(type, content)
     # Finding the destination
     found = False
-    for i in GROUP:
-        if ip == GROUP[i]:
+    for i in Group:
+        if ip == Group[i]:
             found = True
             enconded_message = EncodeMessage(type, content)
             try:
@@ -97,26 +90,26 @@ def ReceiveMessage(conn):
 
 ''' Group method '''
 
-def Agroup(ip, id=None, type=AGROUP):
+def Agroup(ip, id=None, type=Function.Agroup):
     # Verifying the connection is itself
     if ip == LOCAL_IP:
         return
     # Verifying if the connection already exists
-    for i in GROUP:
-        if GROUP[i] == ip:
+    for i in Group:
+        if Group[i] == ip:
             return
     # Creating connection
     SendAgroupMessage(ip, type)
 
     if not id:
-        id = len(GROUP)+1
-    GROUP[id] = ip
+        id = len(Group)+1
+    Group[id] = ip
 
-def SendAgroupMessage(ip, type=AGROUP):
-    content = str(ID) + ':' + str(len(GROUP))
-    for i in GROUP:
-        if GROUP[i] != ip:
-            content += ' ' + str(i) + ':' + GROUP[i]['IP']
+def SendAgroupMessage(ip, type=Function.Agroup):
+    content = str(ID) + ':' + str(len(Group))
+    for i in Group:
+        if Group[i] != ip:
+            content += ' ' + str(i) + ':' + Group[i]['IP']
 
     enconded_message = EncodeMessage(type, content)
     try:
@@ -128,14 +121,14 @@ def SendAgroupMessage(ip, type=AGROUP):
         print('Error:', e)
 
 def Include(ip):
-    Agroup(ip, type=INCLUDE)
+    Agroup(ip, type=Function.Include)
 
 def Group():
-    if not GROUP:
+    if not Group:
         print('There aren\'t connections')
     else:
-        for i in GROUP:
-            print('ID:', i, 'IP', GROUP[i])
+        for i in Group:
+            print('ID:', i, 'IP', Group[i])
 
 def UpdateGroup(id, content):
     content = content.split()[1:]
@@ -143,31 +136,32 @@ def UpdateGroup(id, content):
         addr = addr.split(':')
         id = addr[0]
         ip = addr[1]
-        for i in range(0, len(GROUP)):
+        for i in range(0, len(Group)):
             if ip == LOCAL_IP:
                 return
-            elif i == len(GROUP) - 1:
+            elif i == len(Group) - 1:
                 Agroup(ip, id)
 
 
 def Connection(conn, addr):
-    message = ReceiveMessage(conn)
-    if message: 
-        if message['Type'] == AGROUP or message['Type'] == INCLUDE:
-            # Verifying the new connection
-            content = message['Content'].split()[0].split(':')
-            id = int(content[1])
-            ip = addr[0]
-            for i in GROUP:
-                if ip == GROUP[i]['IP']:
-                    conn.close()
-                    continue
-            # Creating a new connection
-            GROUP[id] = ip
-            UpdateGroup(id, message['Content'])
-            if message['Type'] == INCLUDE:
-                ID = int(content[2])
-    conn.close()
+    while Running:
+        message = ReceiveMessage(conn)
+        if message: 
+            if message['Type'] == Function.Agroup or message['Type'] == Function.Include:
+                # Verifying the new connection
+                content = message['Content'].split()[0].split(':')
+                id = int(content[1])
+                ip = addr[0]
+                for i in Group:
+                    if ip == Group[i]['IP']:
+                        conn.close()
+                        continue
+                # Creating a new connection
+                Group[id] = ip
+                UpdateGroup(id, message['Content'])
+                if message['Type'] == Function.Include:
+                    ID = int(content[2])
+        conn.close()
 
 def Listener():
     TCP = socket(AF_INET, SOCK_STREAM)
@@ -175,7 +169,7 @@ def Listener():
     print('Listening in', LOCAL_IP+':'+str(PORT))
     # Listening for connections
     TCP.listen(1)
-    while RUNNING:
+    while Running:
         conn, addr = TCP.accept()
         connection = Thread(target=Connection, args=[conn, addr,])
         connection.start()
@@ -222,34 +216,34 @@ def Events():
 ''' DHT methods '''
 
 def IdByKey(key):
-    total = len(GROUP)+1
+    total = len(Group)+1
     return key % total
 
 def SetData(key, data):
     if not DHT:
-        DATA[key] = data
+        Data[key] = data
     else:
         id = IdByKey(key)
         if ID == id:
-            DATA[key] = data
+            Data[key] = data
         else:
-            SendMessage(GROUP[id]['IP'], str(key)+':'+str(data), SET_DATA)
+            SendMessage(Group[id]['IP'], str(key)+':'+str(data), SET_Data)
 
 def GetData(key):
     id = IdByKey(key)
     if ID == id or not DHT:
-        print('Data:', DATA[key])
+        print('Data:', Data[key])
     else:
-        SendMessage(GROUP[id]['IP'], str(key), GET_DATA)
+        SendMessage(Group[id]['IP'], str(key), GET_Data)
 
 def GiveData(id, key):
-    if key in DATA:
-        SendMessage(GROUP[id]['IP'], str(DATA[key]), GIVE_DATA)
+    if key in Data:
+        SendMessage(Group[id]['IP'], str(Data[key]), GIVE_Data)
     else:
-        SendMessage(GROUP[id]['IP'], str(NOT_FOUND), GIVE_DATA)
+        SendMessage(Group[id]['IP'], str(NOT_FOUND), GIVE_Data)
 
 def ShowData():
-    if not DATA:
+    if not Data:
         print('There aren\'t storaged data')
-    for key, content in DATA.items():
+    for key, content in Data.items():
         print(key, content)

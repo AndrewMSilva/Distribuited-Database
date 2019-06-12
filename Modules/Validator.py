@@ -1,5 +1,5 @@
+import Settings.Function as Function
 from pyparsing import *
-import Modules.Communicator as Communicator
 
 def Read(cmd):
     # Acionando validadores
@@ -9,7 +9,7 @@ def Read(cmd):
             if len(splited) != 2:
                 cmd = False
             else:
-                cmd = [Communicator.INCLUDE, cmd[1]]
+                cmd = [Function.Include, cmd[1]]
         elif(splited[0] == 'create' and splited[1] == 'table'):
             cmd = CreateTable(cmd[12:])
         elif(splited[0] == 'insert' and splited[1] == 'into'):
@@ -37,7 +37,7 @@ def CreateTable(cmd):
         return False
     i = 1
     status = -1
-    attr = [Communicator.CREATE_TABLE, False]
+    attr = [Function.CreateTable, False]
     for j in range(i,len(cmd)):
         if(status == -1 and cmd[j] != ' '): # procurando onde começa o nome da tabela
             status = 0
@@ -80,7 +80,7 @@ def InsertInto(cmd):
         # Validando SQL
         sql_stmt = "insert into " + table_name + "(" + term_list + ")"
         res = sql_stmt.parseString(cmd)
-        query = [Communicator.INSERT_INTO, res.table, list(res.terms)]
+        query = [Function.InsertInto, res.table, list(res.terms)]
         for i in range(0, len(query[2])):
             try:
                 query[2][i] = int(query[2][i])
@@ -95,7 +95,7 @@ def DeleteFrom(cmd):
         return False
     i = 1
     status = -1
-    attr = [Communicator.DELETE_FROM, False]
+    attr = [Function.DeleteFrom, False]
     values = []
     for j in range(i,len(cmd)):
         if(status == -1 and cmd[j] != ' '): # procurando onde começa o nome da tabela
@@ -125,7 +125,7 @@ def Select(cmd):
     if(cmd[0] != ' '):
         return False
     i = 1
-    attr = [Communicator.SELECT, False]
+    attr = [Function.Select, False]
     status = 0
     for j in range(i,len(cmd)):
         if(status == 0 and cmd[j] != ' '): # procurando onde começam os campos
@@ -154,7 +154,7 @@ def ShowTable(cmd):
         return False
     i = 1
     status = 0
-    attr = [Communicator.SHOW_TABLE, False]
+    attr = [Function.ShowTable, False]
     for j in range(i,len(cmd)):
         if(status == 0 and cmd[j] != ' '): # procurando onde começa o nome da tabela
             status = 1
