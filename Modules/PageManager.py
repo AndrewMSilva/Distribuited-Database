@@ -13,14 +13,13 @@ def PageExist(pageName, offset = ''):
 def CreatePage(pageName, offset):
 	try:
 		file = open(Page.Directory+pageName+str(offset)+Page.Extension, 'w+b')
-		pageLen = 8*1024 # 8KB
 		special = 0 # bytes do frame especial
 		headerBytes = 12
 		# criando o header
 		pd_tli = 0 # TLI da última mudança
 		pd_lower = headerBytes # Offset para começar o espaço livre
-		pd_upper = pageLen - special # Offset ao fim do espaço livre
-		pd_special = pageLen - special # Deslocamento para o início do espaço especial
+		pd_upper = Page.Length - special # Offset ao fim do espaço livre
+		pd_special = Page.Length - special # Deslocamento para o início do espaço especial
 		pd_tlist = 0
 		file.write(pd_tli.to_bytes(4,'little'))
 		file.write(pd_lower.to_bytes(2,'little'))
@@ -28,7 +27,7 @@ def CreatePage(pageName, offset):
 		file.write(pd_special.to_bytes(2,'little'))
 		file.write(pd_tlist.to_bytes(2,'little'))
 		# inicializando espaços vazios
-		free = pageLen - headerBytes - special # bytes livres
+		free = Page.Length - headerBytes - special # bytes livres
 		file.write(bytes(free))
 		# alocando frame especial
 		file.write(bytes(special))
@@ -253,7 +252,6 @@ def CreateMetaPage(pageName,attr): # [[type,typeLen,nameLen,name],...] | cria a 
 	try:
 		file = open(Page.Directory+pageName+Page.MetaData+Page.Extension, 'wb')
 		# pega os atributos já verificados e insere um por vez
-		pageLen = 8*1024 # 8KB
 		metaLen = len(attr)
 		file.write(metaLen.to_bytes(1,'little')) # quantidade de atributos do meta
 		attrLen = 0
@@ -263,7 +261,7 @@ def CreateMetaPage(pageName,attr): # [[type,typeLen,nameLen,name],...] | cria a 
 			file.write(a[2].to_bytes(1,'little')) #tamanho do nome
 			file.write(a[3].encode()) #pra string
 			attrLen += 6 + len(a[3])
-		file.write(bytes(pageLen - metaLen - attrLen))
+		file.write(bytes(Page.Length - metaLen - attrLen))
 		# salvando e fechando
 		file.close()
 		return True
@@ -298,7 +296,6 @@ def GetMeta(pageName): #pegar os atributos da tabela
 def CreateToastControllerPage(pageName, offset,LastUsedPage = 0):
 	try:
 		file = open(Page.Directory+pageName+str(offset)+Page.ToastController+Page.Extension, 'w+b')
-		pageLen = 8*1024 # 8KB
 		headerBytes = 10
 		# criando o header
 		pd_lower = headerBytes # Offset para começar o espaço livre
@@ -309,7 +306,7 @@ def CreateToastControllerPage(pageName, offset,LastUsedPage = 0):
 		file.write(LastUsedPage.to_bytes(2,'little'))
 		file.write(LastID.to_bytes(4,'little'))
 		# inicializando espaços vazios
-		free = pageLen - headerBytes # bytes livres
+		free = Page.Length - headerBytes # bytes livres
 		file.write(bytes(free))
 		# salvando e fechando
 		file.close()
@@ -321,13 +318,12 @@ def CreateToastControllerPage(pageName, offset,LastUsedPage = 0):
 def CreateToastPage(pageName, offset):
 	try:
 		file = open(Page.Directory+pageName+str(offset)+Page.ToastContent+Page.Extension, 'w+b')
-		pageLen = 8*1024 # 8KB
 		headerBytes = 2
 		# criando o header
 		pd_lower = headerBytes # Offset para começar o espaço livre
 		file.write(pd_lower.to_bytes(2,'little'))
 		# inicializando espaços vazios
-		free = pageLen - headerBytes # bytes livres
+		free = Page.Length - headerBytes # bytes livres
 		file.write(bytes(free))
 		# salvando e fechando
 		file.close()
@@ -356,7 +352,7 @@ def CreateToastControllerFrame(pageName, offset, text):
 		file.seek(0, 0) # posição de início do pd_lower
 		pd_lower = int.from_bytes(file.read(2), 'little') # lendo o ponteiro que indica onde colocar o próximo item
 
-		if((8*1024 - pd_lower) < (tupleLen)): # se não há espaço
+		if((Page.Length - pd_lower) < (tupleLen)): # se não há espaço
 			file.close()
 			CreateToastControllerPage(pageName, offset+1, lastUsedPage) # cria uma nova página
 			return CreateToastControllerFrame(pageName, offset+1, text) # insere a tupla na nova página
@@ -398,10 +394,9 @@ def CreateToastFrame(pageName,offset,text):
 	try:
 		file = open(Page.Directory+pageName+str(offset)+Page.ToastContent+Page.Extension, 'r+b')
 		# verificando se há espaço na página
-		pageLen = 8*1024
 		pd_lower = int.from_bytes(file.read(2), 'little') # lendo o ponteiro que indica onde colocar o próximo item
 		tupleLen = len(text)
-		if(tupleLen <= (pageLen - pd_lower)):
+		if(tupleLen <= (Page.Length - pd_lower)):
 			# gerenciando pd_lower
 			file.seek(0, 0) # posição de início do pd_lower
 			file.write((pd_lower+tupleLen).to_bytes(2, 'little')) # atualizando o ponteiro
@@ -414,7 +409,7 @@ def CreateToastFrame(pageName,offset,text):
 			file.close()
 			return aux
 
-		remaining = pageLen - pd_lower
+		remaining = Page.Length - pd_lower
 		if(remaining == 0):
 			file.close() #salvando e fechando
 			return CreateToastFrame(pageName, offset+1, text)
@@ -422,7 +417,7 @@ def CreateToastFrame(pageName,offset,text):
 		file.seek(pd_lower, 0) # posição de início do pd_lower
 		file.write(insert.encode()) #inserindo o que dá
 		file.seek(0,0) #atualizando pd_lower pro máximo
-		file.write((pageLen).to_bytes(2, 'little'))
+		file.write((Page.Length).to_bytes(2, 'little'))
 
 		CreateToastPage(pageName, offset+1) # cria uma nova página
 		file.close() #salvando e fechando
@@ -463,12 +458,12 @@ def GetToastFrame(pageName,offset,pointer,size,text = ''): #envie text como ''
 
 		file.seek(pointer, 0)
 
-		if(size <= (8*1024 - pointer)):
+		if(size <= (Page.Length - pointer)):
 			a = file.read(size).decode()
 			file.close()
 			return a
 
-		remaining = size - (8*1024 - pointer)
+		remaining = size - (Page.Length - pointer)
 		text = text + file.read(remaining).decode()
 		size = size - remaining
 		file.close() #salando e fechando

@@ -2,6 +2,7 @@
 Directory = './Pages/'
 MetaData  = 'Meta'
 Extension = '.page'
+Length    = 8*1024
 # Toast
 ToastContent = 'Toast'
 ToastController = 'ToastList'
