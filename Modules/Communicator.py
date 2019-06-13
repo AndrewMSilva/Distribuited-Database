@@ -2,56 +2,39 @@ import Settings.Function as Function
 from socket import socket, gethostbyname, gethostname, AF_INET, SOCK_STREAM
 from threading import Thread
 import hashlib
+import random
 import time
 
 # Main settings
-LOCAL_IP = gethostbyname(gethostname())
-PORT     = 5918
-Running  = True
+LocalIP      = gethostbyname(gethostname())
+StandardPort = 5918
+BufferLength = 1024
+LocalID      = 0
+Running      = True
 
-# Group controllers
-TOKEN = hashlib.sha1('Aa@215?'.encode('latin1')).hexdigest()
+# Group settings
+Token = hashlib.sha1('Aa@215?'.encode('latin1')).hexdigest()
 Group = {}
-ID    = 0
-
-# Events controllers
-EVENTS = []
-
-# DHT controllers
-DHT   = False
-Data  = {}
-
-# Massage configs
-BUFFER_LEN = 1024
-TIMEOUT    = 0.1
-
-# Message types
-EVENT        = 3
-SET_Data     = 4
-GET_Data     = 5
-GIVE_Data    = 6
-NOT_FOUND    = 404
-
-def Start():
-    listener = Thread(target=Listener)
-    listener.start()
 
 ''' Message methods '''
 
 def EncodeMessage(type, content):
-    message = TOKEN + str(type) + content
+    ts = time.time()
+    message = Token + str(type) + str(len(str(ts))) + str(ts) + content
     return message.encode('latin1')
 
 def DecodeMessage(enconded_message):
-    token_len = len(TOKEN)
+    token_len = len(Token)
     enconded_message = enconded_message.decode('latin1')
     try:
         token = str(enconded_message[:token_len])
         type = int(enconded_message[token_len:token_len+1])
     except:
         return False
-    content = enconded_message[token_len+1:]
-    return {'TOKEN': token, 'Type': type, 'Content': content}
+    time_len = int(enconded_message[token_len+2:token_len+4])
+    time = float(enconded_message[token_len+4:token_len+4+time_len])
+    content = enconded_message[token_len+4+time_len:]
+    return {'Token': token, 'Type': type, 'Time': time, 'Content': content}
 
 def SendMessage(ip, content, type):
     enconded_message = EncodeMessage(type, content)
@@ -63,7 +46,7 @@ def SendMessage(ip, content, type):
             enconded_message = EncodeMessage(type, content)
             try:
                 tcp = socket(AF_INET, SOCK_STREAM)
-                tcp.connect((ip, PORT))
+                tcp.connect((ip, StandardPort))
                 tcp.send(enconded_message)
                 tcp.close()
             except Exception as e:
@@ -73,14 +56,14 @@ def SendMessage(ip, content, type):
         print('The destination is not a group member')
 
 def ReceiveMessage(conn):
-    enconded_message = conn.recv(BUFFER_LEN)
+    enconded_message = conn.recv(BufferLength)
     message = DecodeMessage(enconded_message)
     # Verifying the message format
     if not message:
         conn.close()
         return False
     # Authenticating message
-    elif message['TOKEN'] != TOKEN:
+    elif message['Token'] != Token:
         print('Access denied: authentication falied')
         conn.close()
         return False
@@ -88,11 +71,11 @@ def ReceiveMessage(conn):
     else:
         return message
 
-''' Group method '''
+''' Group methods '''
 
 def Agroup(ip, id=None, type=Function.Agroup):
     # Verifying the connection is itself
-    if ip == LOCAL_IP:
+    if ip == LocalIP:
         return
     # Verifying if the connection already exists
     for i in Group:
@@ -106,15 +89,16 @@ def Agroup(ip, id=None, type=Function.Agroup):
     Group[id] = ip
 
 def SendAgroupMessage(ip, type=Function.Agroup):
-    content = str(ID) + ':' + str(len(Group))
+    content = str(LocalID) + ':' + str(len(Group))
     for i in Group:
         if Group[i] != ip:
             content += ' ' + str(i) + ':' + Group[i]['IP']
 
     enconded_message = EncodeMessage(type, content)
+    print('Sending:', enconded_message)
     try:
         tcp = socket(AF_INET, SOCK_STREAM)
-        tcp.connect((ip, PORT))
+        tcp.connect((ip, StandardPort))
         tcp.send(enconded_message)
         tcp.close()
     except Exception as e:
@@ -123,7 +107,7 @@ def SendAgroupMessage(ip, type=Function.Agroup):
 def Include(ip):
     Agroup(ip, type=Function.Include)
 
-def Group():
+def ShowGroup():
     if not Group:
         print('There aren\'t connections')
     else:
@@ -137,36 +121,35 @@ def UpdateGroup(id, content):
         id = addr[0]
         ip = addr[1]
         for i in range(0, len(Group)):
-            if ip == LOCAL_IP:
+            if ip == LocalIP:
                 return
             elif i == len(Group) - 1:
                 Agroup(ip, id)
 
 
 def Connection(conn, addr):
-    while Running:
-        message = ReceiveMessage(conn)
-        if message: 
-            if message['Type'] == Function.Agroup or message['Type'] == Function.Include:
-                # Verifying the new connection
-                content = message['Content'].split()[0].split(':')
-                id = int(content[1])
-                ip = addr[0]
-                for i in Group:
-                    if ip == Group[i]['IP']:
-                        conn.close()
-                        continue
-                # Creating a new connection
-                Group[id] = ip
-                UpdateGroup(id, message['Content'])
-                if message['Type'] == Function.Include:
-                    ID = int(content[2])
-        conn.close()
+    message = ReceiveMessage(conn)
+    if message: 
+        if message['Type'] == Function.Agroup or message['Type'] == Function.Include:
+            # Verifying the new connection
+            content = message['Content'].split()[0].split(':')
+            id = int(content[1])
+            ip = addr[0]
+            for i in Group:
+                if ip == Group[i]:
+                    conn.close()
+                    continue
+            # Creating a new connection
+            Group[id] = ip
+            UpdateGroup(id, message['Content'])
+            if message['Type'] == Function.Include:
+                LocalID = int(content[2])
+    conn.close()
 
 def Listener():
     TCP = socket(AF_INET, SOCK_STREAM)
-    TCP.bind((LOCAL_IP, PORT))
-    print('Listening in', LOCAL_IP+':'+str(PORT))
+    TCP.bind((LocalIP, StandardPort))
+    print('Listening in', LocalIP+':'+str(StandardPort))
     # Listening for connections
     TCP.listen(1)
     while Running:
@@ -175,75 +158,39 @@ def Listener():
         connection.start()
     TCP.close()
 
-''' Synchronized events methods '''
-
-def SendEvent(content):
-    time_stamp = time.time()
-    EVENTS.append((time_stamp, content))
-    message = str(time_stamp) + ':' + content
-    Broadcast(message, EVENT)
-
-def EncodeEvents():
-    if not EVENTS:
-        return ''
-
-    content = ''
-    for event in EVENTS:
-        content += ' ' + str(event[0]) + ':' + event[1]
-    return content
-
-def EventsReceived(content):
-    content = content.split()
-    # Deconding events from message
-    for e in content:
-        e = e.split(':')
-        event = (float(e[0]), e[1])
-        # Verifying and adding the event
-        if event in EVENTS:
-            continue
-        else:
-            EVENTS.append(event)
-            EVENTS.sort(key=lambda e: e[0])
-
-def Events():
-    if not EVENTS:
-        print('There aren\'t events')
-    else:
-        print('Current time_stamp:', EVENTS[len(EVENTS)-1][0])
-        for event in EVENTS:
-            print(event)
+def Start():
+    listener = Thread(target=Listener)
+    listener.start()
 
 ''' DHT methods '''
 
-def IdByKey(key):
-    total = len(Group)+1
-    return key % total
+StorageSpace = 256
+Addresses    = [False]*StorageSpace
 
-def SetData(key, data):
-    if not DHT:
-        Data[key] = data
-    else:
-        id = IdByKey(key)
-        if ID == id:
-            Data[key] = data
+# Pearson string hash
+T = list(range(0, StorageSpace))
+random.seed(StorageSpace)
+random.shuffle(T)
+
+def GetPointer(file_name):
+    h = [0]*StorageSpace
+    n = len(file_name)
+    for i in range(0, n):
+        h[i+1] = T[h[i] ^ ord(file_name[i])]
+    return h[n]
+
+print(int(StorageSpace/len(Group)))
+def GetIDByFileName(file_name):
+    pointer = GetPointer(file_name)
+    local_space = int(StorageSpace/len(Group))
+    for id in Group:
+        if pointer < local_space:
+            break
         else:
-            SendMessage(Group[id]['IP'], str(key)+':'+str(data), SET_Data)
+            local_space += local_space
+    print(id, pointer)
+    return id
 
-def GetData(key):
-    id = IdByKey(key)
-    if ID == id or not DHT:
-        print('Data:', Data[key])
-    else:
-        SendMessage(Group[id]['IP'], str(key), GET_Data)
-
-def GiveData(id, key):
-    if key in Data:
-        SendMessage(Group[id]['IP'], str(Data[key]), GIVE_Data)
-    else:
-        SendMessage(Group[id]['IP'], str(NOT_FOUND), GIVE_Data)
-
-def ShowData():
-    if not Data:
-        print('There aren\'t storaged data')
-    for key, content in Data.items():
-        print(key, content)
+def FileExists(file_name):
+    pointer = GetPointer(file_name)
+    return Addresses[pointer]

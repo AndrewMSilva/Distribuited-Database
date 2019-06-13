@@ -1,7 +1,8 @@
 Include     = 0
 Agroup      = 1
-CreateTable = 2
-InsertInto  = 3
-DeleteFrom  = 4
-Select      = 5
-ShowTable   = 6
+ShowGroup   = 2
+CreateTable = 3
+InsertInto  = 4
+DeleteFrom  = 5
+Select      = 6
+ShowTable   = 7

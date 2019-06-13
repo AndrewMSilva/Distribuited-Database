@@ -10,6 +10,11 @@ def Read(cmd):
                 cmd = False
             else:
                 cmd = [Function.Include, cmd[1]]
+        elif splited[0] == 'show' and splited[1] == 'group':
+            if len(splited) != 2:
+                cmd = False
+            else:
+                cmd = [Function.ShowGroup]
         elif(splited[0] == 'create' and splited[1] == 'table'):
             cmd = CreateTable(cmd[12:])
         elif(splited[0] == 'insert' and splited[1] == 'into'):
