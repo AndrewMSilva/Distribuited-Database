@@ -31,29 +31,24 @@ def DecodeMessage(enconded_message):
         type = int(enconded_message[token_len:token_len+1])
     except:
         return False
-    time_len = int(enconded_message[token_len+2:token_len+4])
-    time = float(enconded_message[token_len+4:token_len+4+time_len])
-    content = enconded_message[token_len+4+time_len:]
+    time_len = int(enconded_message[token_len+1:token_len+3])
+    time = float(enconded_message[token_len+3:token_len+3+time_len])
+    content = enconded_message[token_len+3+time_len:]
     return {'Token': token, 'Type': type, 'Time': time, 'Content': content}
 
-def SendMessage(ip, content, type):
-    enconded_message = EncodeMessage(type, content)
+def SendMessage(id, content, type):
     # Finding the destination
-    found = False
-    for i in Group:
-        if ip == Group[i]:
-            found = True
-            enconded_message = EncodeMessage(type, content)
-            try:
-                tcp = socket(AF_INET, SOCK_STREAM)
-                tcp.connect((ip, StandardPort))
-                tcp.send(enconded_message)
-                tcp.close()
-            except Exception as e:
-                print('Error:', e)
-            break
-    if not found:
-        print('The destination is not a group member')
+    if id in Group:
+        enconded_message = EncodeMessage(type, content)
+        try:
+            tcp = socket(AF_INET, SOCK_STREAM)
+            tcp.connect((ip, StandardPort))
+            tcp.send(enconded_message)
+            tcp.close()
+        except Exception as e:
+            print('Error:', e)
+    else:
+        print('ID not found!')
 
 def ReceiveMessage(conn):
     enconded_message = conn.recv(BufferLength)
@@ -83,13 +78,12 @@ def Agroup(ip, id=None, type=Function.Agroup):
         print('IP already connected')
         return
     # Creating connection
-    SendAgroupMessage(ip, type)
-
-    if not id:
-        id = len(Group)
-    
-    Group[id] = ip
-    print('Connected to', str(id)+':'+ip)
+    if SendAgroupMessage(ip, type):
+        if not id:
+            id = len(Group)
+        
+        Group[id] = ip
+        print('Connected to', str(id)+':'+ip)
 
 
 def SendAgroupMessage(ip, type=Function.Agroup):
@@ -99,14 +93,15 @@ def SendAgroupMessage(ip, type=Function.Agroup):
             content += ' ' + str(i) + ':' + Group[i]
 
     enconded_message = EncodeMessage(type, content)
-    print('Sending:', enconded_message)
     try:
-        tcp = socket(AF_INET, SOCK_STREAM)
-        tcp.connect((ip, StandardPort))
-        tcp.send(enconded_message)
-        tcp.close()
+        s = socket(AF_INET, SOCK_STREAM)
+        s.connect((ip, StandardPort))
+        s.send(enconded_message)
+        s.close()
+        return True
     except Exception as e:
         print('Error:', e)
+        return False
 
 def Include(ip):
     Agroup(ip, type=Function.Include)
@@ -115,7 +110,7 @@ def ShowGroup():
     if not Group:
         print('There aren\'t connections')
     else:
-        for i in Group:
+        for i in sorted(Group.keys()):
             print('ID:', i, ' IP:', Group[i])
 
 def UpdateGroup(id, content):
@@ -130,7 +125,7 @@ def UpdateGroup(id, content):
 
 def Connection(conn, addr):
     message = ReceiveMessage(conn)
-    if message: 
+    if message:
         if message['Type'] == Function.Agroup or message['Type'] == Function.Include:
             # Verifying the new connection
             content = message['Content'].split()[0].split(':')

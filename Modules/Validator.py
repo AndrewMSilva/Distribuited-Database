@@ -9,7 +9,7 @@ def Read(cmd):
             if len(splited) != 2:
                 cmd = False
             else:
-                cmd = [Function.Include, cmd[1]]
+                cmd = [Function.Include, splited[1]]
         elif splited[0] == 'show' and splited[1] == 'group':
             if len(splited) != 2:
                 cmd = False
