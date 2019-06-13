@@ -1,12 +1,12 @@
 import Settings.Function as Function
-from socket import socket, gethostbyname, gethostname, AF_INET, SOCK_STREAM
+from socket import socket, gethostbyname, gethostname, AF_INET, SOCK_STREAM, SOCK_DGRAM
 from threading import Thread
 import hashlib
 import random
 import time
 
 # Main settings
-LocalIP      = gethostbyname(gethostname())
+LocalIP      = '127.0.0.1'
 LocalID      = 0
 StandardPort = 5918
 BufferLength = 1024
@@ -145,6 +145,14 @@ def Connection(conn, addr):
     conn.close()
 
 def Listener():
+    s = socket(AF_INET, SOCK_DGRAM)
+    try:
+        s.connect(('10.255.255.255', 1))
+        LocalIP = s.getsockname()[0]
+    except:
+        pass
+    finally:
+        s.close()
     TCP = socket(AF_INET, SOCK_STREAM)
     TCP.bind((LocalIP, StandardPort))
     print('Listening in', LocalIP+':'+str(StandardPort))
