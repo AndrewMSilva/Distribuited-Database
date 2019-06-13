@@ -76,9 +76,11 @@ def ReceiveMessage(conn):
 def Agroup(ip, id=None, type=Function.Agroup):
     # Verifying the connection is itself
     if ip == LocalIP:
+        print('Unable to connect to itself')
         return
     # Verifying if the connection already exists
     if ip in Group.values():
+        print('IP already connected')
         return
     # Creating connection
     SendAgroupMessage(ip, type)
@@ -126,7 +128,7 @@ def UpdateGroup(id, content):
         addr = addr.split(':')
         id = addr[0]
         ip = addr[1]
-        if ip in Group.values():
+        if not ip in Group.values():
             Agroup(ip, id)
 
 
