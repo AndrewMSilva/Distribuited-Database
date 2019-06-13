@@ -137,19 +137,24 @@ def Connection(conn, addr):
         if message['Type'] == Function.Agroup or message['Type'] == Function.Include:
             # Verifying the new connection
             content = message['Content'].split()[0].split(':')
-            id = int(content[1])
+            id = int(content[0])
             ip = addr[0]
             for i in Group:
                 if ip == Group[i]:
                     conn.close()
                     continue
             # Creating a new connection
-            Group[id] = ip
             UpdateGroup(id, message['Content'])
             if message['Type'] == Function.Include:
-                del Group[LocalID]
-                LocalID = int(content[2])
+                print('Connected to', ip)
+                global LocalID
+                old_id = LocalID
+                del Group[old_id]
+                LocalID = int(content[1])
                 Group[LocalID] = LocalIP
+                SendAgroupMessage(ip)
+            Group[id] = ip
+            
     conn.close()
 
 def Listener():
