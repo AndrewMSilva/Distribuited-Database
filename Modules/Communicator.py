@@ -6,11 +6,19 @@ import random
 import time
 
 # Main settings
-LocalIP      = '127.0.0.1'
 LocalID      = 0
 StandardPort = 5918
 BufferLength = 1024
 Running      = True
+LocalIP      = '127.0.0.1'
+s = socket(AF_INET, SOCK_DGRAM)
+try:
+    s.connect(('10.255.255.255', 1))
+    LocalIP = s.getsockname()[0]
+except:
+    pass
+finally:
+        s.close()
 
 # Group settings
 Token = hashlib.sha1('Aa@215?'.encode('latin1')).hexdigest()
@@ -145,14 +153,6 @@ def Connection(conn, addr):
     conn.close()
 
 def Listener():
-    s = socket(AF_INET, SOCK_DGRAM)
-    try:
-        s.connect(('10.255.255.255', 1))
-        LocalIP = s.getsockname()[0]
-    except:
-        pass
-    finally:
-        s.close()
     TCP = socket(AF_INET, SOCK_STREAM)
     TCP.bind((LocalIP, StandardPort))
     print('Listening in', LocalIP+':'+str(StandardPort))
