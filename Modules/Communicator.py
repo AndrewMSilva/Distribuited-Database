@@ -7,14 +7,14 @@ import time
 
 # Main settings
 LocalIP      = gethostbyname(gethostname())
+LocalID      = 0
 StandardPort = 5918
 BufferLength = 1024
-LocalID      = 0
 Running      = True
 
 # Group settings
 Token = hashlib.sha1('Aa@215?'.encode('latin1')).hexdigest()
-Group = {LocalIP}
+Group = {LocalID: LocalIP}
 
 ''' Message methods '''
 
@@ -86,21 +86,17 @@ def Agroup(ip, id=None, type=Function.Agroup):
     SendAgroupMessage(ip, type)
 
     if not id:
-        id = len(Group)+1
+        id = len(Group)
     
     Group[id] = ip
-    NewGroup = {}
-    for id in sorted(Group.keys()):
-        NewGroup[id] = Group[id]
-    Group = NewGroup
     print('Connected to', str(id)+':'+ip)
 
 
 def SendAgroupMessage(ip, type=Function.Agroup):
     content = str(LocalID) + ':' + str(len(Group))
     for i in Group:
-        if Group[i] != ip:
-            content += ' ' + str(i) + ':' + Group[i]['IP']
+        if Group[i] != LocalIP:
+            content += ' ' + str(i) + ':' + Group[i]
 
     enconded_message = EncodeMessage(type, content)
     print('Sending:', enconded_message)
@@ -120,7 +116,7 @@ def ShowGroup():
         print('There aren\'t connections')
     else:
         for i in Group:
-            print('ID:', i, 'IP', Group[i])
+            print('ID:', i, ' IP:', Group[i])
 
 def UpdateGroup(id, content):
     content = content.split()[1:]
@@ -148,7 +144,9 @@ def Connection(conn, addr):
             Group[id] = ip
             UpdateGroup(id, message['Content'])
             if message['Type'] == Function.Include:
+                del Group[LocalID]
                 LocalID = int(content[2])
+                Group[LocalID] = LocalIP
     conn.close()
 
 def Listener():
@@ -172,11 +170,10 @@ def Start():
 StorageSpace = 256
 Addresses    = [False]*StorageSpace
 
-# Pearson string hash
 T = list(range(0, StorageSpace))
 random.seed(StorageSpace)
 random.shuffle(T)
-
+# Pearson string hash
 def GetPointer(file_name):
     h = [0]*StorageSpace
     n = len(file_name)
@@ -187,7 +184,7 @@ def GetPointer(file_name):
 def GetIDByFileName(file_name):
     pointer = GetPointer(file_name)
     local_space = int(StorageSpace/len(Group))
-    for id in Group:
+    for id in sorted(Group.keys()):
         if pointer < local_space:
             break
         else:
