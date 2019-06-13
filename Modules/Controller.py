@@ -11,8 +11,10 @@ def Execute(cmd):
 	if(isinstance(cmd,list)):
 		if cmd[0] == Function.Include:
 			Communicator.Include(cmd[1])
-		if cmd[0] == Function.ShowGroup:
+		elif cmd[0] == Function.ShowGroup:
 			Communicator.ShowGroup()
+		elif cmd[0] == Function.QuitGroup:
+			Communicator.QuitGroup()
 		elif cmd[0] == Function.CreateTable:
 			CreateTable(cmd[1:])
 		elif cmd[0] == Function.InsertInto:

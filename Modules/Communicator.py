@@ -130,6 +130,16 @@ def UpdateGroup(id, content):
         if not ip in Group.values():
             Agroup(ip, id)
 
+def QuitGroup():
+    for id in Group:
+        if Group[id] != LocalID:
+            SendMessage(id, 'None', Function.QuitGroup)
+            del Group[id]
+    old_id = LocalID
+    del Group[old_id]
+    LocalID = 0
+    Group[LocalID] = LocalIP
+    SendAgroupMessage(ip)
 
 def Connection(conn, addr):
     message = ReceiveMessage(conn)
