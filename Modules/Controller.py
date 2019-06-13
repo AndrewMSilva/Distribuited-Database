@@ -1,7 +1,6 @@
 import Settings.Function as Function
 import Modules.Validator as Validator
 import Modules.Communicator as Communicator
-import Modules.DHT as DHT
 import Modules.Database as Database
 
 Communicator.Start()

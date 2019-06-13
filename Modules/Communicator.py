@@ -14,7 +14,7 @@ Running      = True
 
 # Group settings
 Token = hashlib.sha1('Aa@215?'.encode('latin1')).hexdigest()
-Group = {}
+Group = {LocalIP}
 
 ''' Message methods '''
 
@@ -179,7 +179,6 @@ def GetPointer(file_name):
         h[i+1] = T[h[i] ^ ord(file_name[i])]
     return h[n]
 
-print(int(StorageSpace/len(Group)))
 def GetIDByFileName(file_name):
     pointer = GetPointer(file_name)
     local_space = int(StorageSpace/len(Group))
