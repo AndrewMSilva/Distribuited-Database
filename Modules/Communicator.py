@@ -91,6 +91,8 @@ def Agroup(ip, id=None, type=Function.Agroup):
     for id in sorted(Group.keys()):
         NewGroup[id] = Group[id]
     Group = NewGroup
+    print('Connected to', str(id)+':'+ip)
+
 
 def SendAgroupMessage(ip, type=Function.Agroup):
     content = str(LocalID) + ':' + str(len(Group))
@@ -142,7 +144,6 @@ def Connection(conn, addr):
                     continue
             # Creating a new connection
             Group[id] = ip
-            print('Connected to', str(id)+':'+ip)
             UpdateGroup(id, message['Content'])
             if message['Type'] == Function.Include:
                 LocalID = int(content[2])
