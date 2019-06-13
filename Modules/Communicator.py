@@ -78,15 +78,19 @@ def Agroup(ip, id=None, type=Function.Agroup):
     if ip == LocalIP:
         return
     # Verifying if the connection already exists
-    for i in Group:
-        if Group[i] == ip:
-            return
+    if ip in Group.values():
+        return
     # Creating connection
     SendAgroupMessage(ip, type)
 
     if not id:
         id = len(Group)+1
+    
     Group[id] = ip
+    NewGroup = {}
+    for id in sorted(Group.keys()):
+        NewGroup[id] = Group[id]
+    Group = NewGroup
 
 def SendAgroupMessage(ip, type=Function.Agroup):
     content = str(LocalID) + ':' + str(len(Group))
@@ -116,15 +120,12 @@ def ShowGroup():
 
 def UpdateGroup(id, content):
     content = content.split()[1:]
-    for ip in content:
+    for addr in content:
         addr = addr.split(':')
         id = addr[0]
         ip = addr[1]
-        for i in range(0, len(Group)):
-            if ip == LocalIP:
-                return
-            elif i == len(Group) - 1:
-                Agroup(ip, id)
+        if ip in Group.values():
+            Agroup(ip, id)
 
 
 def Connection(conn, addr):
@@ -141,6 +142,7 @@ def Connection(conn, addr):
                     continue
             # Creating a new connection
             Group[id] = ip
+            print('Connected to', str(id)+':'+ip)
             UpdateGroup(id, message['Content'])
             if message['Type'] == Function.Include:
                 LocalID = int(content[2])
