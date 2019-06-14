@@ -3,8 +3,6 @@ import Modules.Validator as Validator
 import Modules.Communicator as Communicator
 import Modules.Database as Database
 
-Communicator.Start()
-
 def Execute(cmd):
 	cmd = Validator.Read(cmd)
 

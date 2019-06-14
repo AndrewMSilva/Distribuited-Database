@@ -1,5 +1,5 @@
 import Settings.Function as Function
-from socket import socket, gethostbyname, gethostname, AF_INET, SOCK_STREAM, SOCK_DGRAM
+from socket import socket, AF_INET, SOCK_STREAM, SOCK_DGRAM
 from threading import Thread
 import hashlib
 import random
@@ -10,21 +10,28 @@ LocalID      = 0
 StandardPort = 5918
 BufferLength = 1024
 Running      = True
-LocalIP      = '127.0.0.1'
-s = socket(AF_INET, SOCK_DGRAM)
-try:
-    s.connect(('10.255.255.255', 1))
-    LocalIP = s.getsockname()[0]
-except:
-    pass
-finally:
-        s.close()
+LocalIP      = None
 
 # Group settings
 Token = hashlib.sha1('Aa@215?'.encode('latin1')).hexdigest()
-Group = {LocalID: LocalIP}
+Group = {}
 
-''' Message methods '''
+def BindSocket():
+    # Getting local IP
+    s = socket(AF_INET, SOCK_DGRAM)
+    try:
+        s.connect(('10.255.255.255', 1))
+        LocalIP = s.getsockname()[0]
+    except:
+        LocalIP = '127.0.0.1'
+    finally:
+            s.close()
+    # Binding socket
+    Group = {LocalID: LocalIP}
+    TCP = socket(AF_INET, SOCK_STREAM)
+    TCP.bind((LocalIP, StandardPort))
+    print('Listening in', LocalIP+':'+str(StandardPort))
+    return TCP
 
 def EncodeMessage(type, content):
     ts = time.time()
@@ -114,6 +121,27 @@ def SendAgroupMessage(ip, type=Function.Agroup):
 def Include(ip):
     Agroup(ip, type=Function.Include)
 
+def IncludeReceived(message):
+    if message['Type'] == Function.Agroup or message['Type'] == Function.Include:
+        # Verifying the new connection
+        content = message['Content'].split()[0].split(':')
+        id = int(content[0])
+        ip = addr[0]
+        for i in Group:
+            if ip == Group[i]:
+                conn.close()
+                continue
+        # Creating a new connection
+        UpdateGroup(id, message['Content'])
+        if message['Type'] == Function.Include:
+            print('Connected to', ip)
+            old_id = LocalID
+            del Group[old_id]
+            LocalID = int(content[1])
+            Group[LocalID] = LocalIP
+            SendAgroupMessage(ip)
+        Group[id] = ip
+
 def ShowGroup():
     if not Group:
         print('There aren\'t connections')
@@ -140,48 +168,6 @@ def QuitGroup():
     LocalID = 0
     Group[LocalID] = LocalIP
     SendAgroupMessage(ip)
-
-def Connection(conn, addr):
-    message = ReceiveMessage(conn)
-    if message:
-        if message['Type'] == Function.Agroup or message['Type'] == Function.Include:
-            # Verifying the new connection
-            content = message['Content'].split()[0].split(':')
-            id = int(content[0])
-            ip = addr[0]
-            for i in Group:
-                if ip == Group[i]:
-                    conn.close()
-                    continue
-            # Creating a new connection
-            UpdateGroup(id, message['Content'])
-            if message['Type'] == Function.Include:
-                print('Connected to', ip)
-                global LocalID
-                old_id = LocalID
-                del Group[old_id]
-                LocalID = int(content[1])
-                Group[LocalID] = LocalIP
-                SendAgroupMessage(ip)
-            Group[id] = ip
-            
-    conn.close()
-
-def Listener():
-    TCP = socket(AF_INET, SOCK_STREAM)
-    TCP.bind((LocalIP, StandardPort))
-    print('Listening in', LocalIP+':'+str(StandardPort))
-    # Listening for connections
-    TCP.listen(1)
-    while Running:
-        conn, addr = TCP.accept()
-        connection = Thread(target=Connection, args=[conn, addr,])
-        connection.start()
-    TCP.close()
-
-def Start():
-    listener = Thread(target=Listener)
-    listener.start()
 
 ''' DHT methods '''
 
