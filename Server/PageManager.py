@@ -1,4 +1,4 @@
-import Settings.Page as Page
+import Page
 
 # PAGES SECTION #
 

@@ -1,5 +1,5 @@
-import Modules.PageManager as PageManager
-import Settings.Page as Page
+import PageManager
+import Page
 
 def CreateTable(args):
 	if(PageManager.PageExist(args[0]+Page.MetaData)): #se já existe n cria denovo e retorna nada
@@ -20,7 +20,7 @@ def CreateTable(args):
 			v.append(aux) #tamanho do char
 			v.append(len(a[0]))#tamanho do nome do campo
 			v.append(a[0])#nome do campo
-		else: #caso seja varchar
+		elif(a[1][0:7] == 'varchar'): #caso seja varchar
 			v.append(3)
 			aux = int((a[1].split('(')[1].split(')'))[0])
 			v.append(aux) #tamanho do varchar
