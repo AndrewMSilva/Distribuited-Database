@@ -1,5 +1,5 @@
 # Main
-Directory = './Pages/'
+Directory = 'Pages/'
 MetaData  = 'Meta'
 Extension = '.page'
 Length    = 8*1024

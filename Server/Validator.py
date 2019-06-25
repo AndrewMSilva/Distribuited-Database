@@ -1,3 +1,5 @@
+from pyparsing import *
+
 def CreateTable(stmt):
 	if not stmt.has_alias():
 		None
@@ -36,6 +38,39 @@ def CreateTable(stmt):
 		return None
 
 	return args
+
+def InsertInto(stmt):
+	if not stmt.has_alias():
+		None
+	table_name = stmt.get_alias()
+	expected = "INSERT"
+	for token in stmt.tokens:
+		if token.value == " ":
+			continue
+		elif not expected and 'VALUES' in token.value:
+			break
+		elif token.value == expected:
+			if expected == "INSERT":
+				expected = "INTO"
+			elif expected == "INTO":
+				expected = table_name
+			elif expected == table_name:
+				expected = None
+
+	if expected:
+		return None
+
+	args = [table_name]
+	attr = token.value
+	if 'VALUES' in attr:
+		attr = attr.replace('VALUES', '')
+		try:
+			args += list(eval(attr))
+			return args
+		except:
+			return None
+	else:
+		return None
 	
 	"""
 

@@ -31,14 +31,15 @@ class Controller(object):
 		args = Validator.CreateTable(stmt)
 		Database.CreateTable(args)
 
-	def __InsertInto(self, cmd):
-		Database.InsertInto(cmd)
+	def __InsertInto(self, stmt):
+		args = Validator.InsertInto(stmt)
+		Database.InsertInto(args)
 
-	def __DeleteFrom(self, cmd):
-		Database.DeleteFrom(cmd)
+	def __DeleteFrom(self, stmt):
+		Database.DeleteFrom(stmt)
 
-	def __Select(self, cmd):
-		Database.Select(cmd)
+	def __Select(self, stmt):
+		Database.Select(stmt)
 
-	def __ShowTable(self, cmd):
-		Database.ShowTable(cmd)
+	def __ShowTable(self, stmt):
+		Database.ShowTable(stmt)
