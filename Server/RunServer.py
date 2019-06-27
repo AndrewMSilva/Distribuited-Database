@@ -1,6 +1,6 @@
-from DRDBServer import DRDBServer
+from Controller import Controller
 
-server = DRDBServer("Aa@Si12!", "2fT1@ds?")
+server = Controller("Aa@Si12!", "2fT1@ds?")
 server.Bind()
 server.Listen()
 

@@ -4,7 +4,7 @@ import hashlib
 import time
 import json
 
-class DSQLiteClient():
+class ClientModule():
 	# Host settings
 	__Port = 5918
 	# Control settings

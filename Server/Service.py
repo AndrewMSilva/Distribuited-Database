@@ -1,11 +1,10 @@
-from Controller import Controller
 from socket import socket, AF_INET, SOCK_STREAM, SOCK_DGRAM
 from threading import Thread
 import hashlib
 import time
 import json
 
-class DRDBServer(Controller):
+class Service(object):
 	# Host settings
 	__ID   = 0
 	__IP   = None
@@ -21,8 +20,6 @@ class DRDBServer(Controller):
 	__PublicKey  = None
 	# Message settings
 	__BufferLength = 8*1024
-	__QueryType    = 0
-	__ResponseType = 1
 
 	def __init__(self, private_key, public_key):
 		# Hashing keys
@@ -80,7 +77,7 @@ class DRDBServer(Controller):
 			try:
 				query = self.__Receive(ip)
 				if not query:	break
-				Controller.Execute(query)
+				self._HandleMessage(query)
 			except:
 				pass
 			
@@ -109,6 +106,10 @@ class DRDBServer(Controller):
 			return message					
 		else:
 			return
+	
+	# Handling a received message (need to be overrided)
+	def _HandleMessage(self, message):
+		pass
 	
 	def IsRunning(self):
 		return self.__Running

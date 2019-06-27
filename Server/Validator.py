@@ -1,6 +1,6 @@
 from pyparsing import *
 
-def CreateTable(stmt):
+def CreateTable(stmt, integer, char, varchar):
 	if not stmt.has_alias():
 		None
 	table_name = stmt.get_alias()
@@ -31,9 +31,33 @@ def CreateTable(stmt):
 			attr = [attr]
 		for i in range(0, len(attr)):
 			attr[i] = attr[i].split()
-			if(len(attr[i]) != 2 or (attr[i][1] != 'int' and attr[i][1][0:4] != 'char' and attr[i][1][0:7] != 'varchar')):
+			field = []
+			if len(attr[i]) == 2:
+				length = 4 # integer length (in bytes)
+				if attr[i][1] == 'integer':
+					field.append(integer)
+					field.append(length) 	      # integer length (in bytes)
+					field.append(len(attr[i][0])) # field name length
+					field.append(attr[i][0]) 	  # field name
+				elif attr[i][1][0:4] == 'char':
+					field.append(char)
+					length = int((attr[i][1].split('(')[1].split(')'))[0])
+					field.append(length) 	      # char length (in bytes)
+					field.append(len(attr[i][0])) # field name length
+					field.append(attr[i][0]) 	  # field name
+				elif attr[i][1][0:7] == 'varchar':
+					field.append(varchar)
+					length = int((attr[i][1].split('(')[1].split(')'))[0])
+					field.append(length) 	      # varchar length in bytes
+					field.append(len(attr[i][0])) # field name length
+					field.append(attr[i][0]) 	  # field name
+				else:
+					return None
+				if length < 0:
+					return None
+			else:
 				return None
-			args.append(attr[i])
+			args.append(field)
 	else:
 		return None
 
