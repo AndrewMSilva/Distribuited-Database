@@ -74,7 +74,7 @@ class GroupManager(Service):
 
 	def _SendMessage(self, ip, data, type, wait_result=False):
 		enconded_message = self._EncodeMessage(data, type, True)
-		s = self._Socket()
+		s = self._NewSocket()
 		result = True
 		try:
 			s.connect((ip, self._Port))
