@@ -95,17 +95,21 @@ class Service(object):
 	
 	# Receiving and authenticating a message
 	def _Receive(self, conn):
-		enconded_message = conn.recv(self.__BufferLength)
-		message = json.loads(enconded_message.decode('latin1'))
-		if 'key' in message and 'time_stamp' in message and 'data' in message:
-			if message.key != self.__PrivateKey and message.key != self.__PublicKey:
+		try:
+			enconded_message = conn.recv(self.__BufferLength)
+			message = json.loads(enconded_message.decode('latin1'))
+			print(message)
+			if 'key' in message and 'time_stamp' in message and 'data' in message:
+				if message.key != self.__PrivateKey and message.key != self.__PublicKey:
+					return
+				elif message.key == self.__PrivateKey:
+					self.__Connections[ip].private = True
+				elif message.key == self.__PublicKey:
+					self.__Connections[ip].private = False
+				return message					
+			else:
 				return
-			elif message.key == self.__PrivateKey:
-				self.__Connections[ip].private = True
-			elif message.key == self.__PublicKey:
-				self.__Connections[ip].private = False
-			return message					
-		else:
+		except:
 			return
 	
 	# Handling a received message (need to be overrided)

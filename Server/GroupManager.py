@@ -29,7 +29,7 @@ class GroupManager(Service):
 			self._Group[id] = ip
 			return 'Connected'
 		else:
-			return 'Unable to connect to '+ip
+			return 'Unable to connect'
 
 
 	def __SendAgroupMessage(self, ip, type=__AgroupMessage):
