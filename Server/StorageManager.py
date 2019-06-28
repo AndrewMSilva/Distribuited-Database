@@ -57,6 +57,7 @@ class StorageManager(GroupManager):
 		return prefix+str(sufix)+extension
 	
 	def HandleMessage(self, conn, message):
+		print(message)
 		if message.type == self._CreateMetaPageMessage:
 			result = self._CreateMetaPage(message.data.table_name, message.data.fields)
 			enconded_message = self._EncodeMessage(result, self._Result, True)

@@ -8,6 +8,10 @@ class GroupManager(Service):
 	__Query   = 0
 	__Include = 1
 	__Agroup  = 2
+
+	def Bind(self):
+		super().Bind()
+		self._Group = {LocalID: LocalIP}
 	
 	''' Group methods '''
 	def __Agroup(self, ip, id=None, type=__Agroup):

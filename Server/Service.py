@@ -11,7 +11,6 @@ class Service(object):
 	# Control settings
 	__Running = False
 	__Socket  = None
-	__Group	  = {}
 	__Connections = {}
 	__Timeout     = 0.1
 	# Authentication settings
@@ -26,12 +25,12 @@ class Service(object):
 		self.__PublicKey = hashlib.sha1(public_key.encode('latin1')).hexdigest()
 		super().__init__()
 	
-	def _Socket(self):
+	def _NewSocket(self):
 		return socket(AF_INET, SOCK_DGRAM)
 
 	def Bind(self):
 		# Getting local IP
-		s = self._Socket()
+		s = self._NewSocket()
 		try:
 			s.connect(('10.255.255.255', 1))
 			self._IP = s.getsockname()[0]
@@ -40,7 +39,7 @@ class Service(object):
 		finally:
 			s.close()
 		# Binding socket
-		self.__Socket = socket(AF_INET, SOCK_STREAM)
+		self.__Socket = self._NewSocket()
 		try:
 			self.__Socket.bind((self._IP, self._Port))
 			print('Listening in', self._IP+':'+str(self._Port))
