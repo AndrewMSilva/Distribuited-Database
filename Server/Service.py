@@ -6,9 +6,8 @@ import json
 
 class Service(object):
 	# Host settings
-	__ID   = 0
-	__IP   = None
-	__Port = 5918
+	_IP   = None
+	_Port = 5918
 	# Control settings
 	__Running = False
 	__Socket  = None
@@ -32,16 +31,16 @@ class Service(object):
 		s = socket(AF_INET, SOCK_DGRAM)
 		try:
 			s.connect(('10.255.255.255', 1))
-			self.__IP = s.getsockname()[0]
+			self._IP = s.getsockname()[0]
 		except:
-			self.__IP = '127.0.0.1'
+			self._IP = '127.0.0.1'
 		finally:
 			s.close()
 		# Binding socket
 		self.__Socket = socket(AF_INET, SOCK_STREAM)
 		try:
-			self.__Socket.bind((self.__IP, self.__Port))
-			print('Listening in', self.__IP+':'+str(self.__Port))
+			self.__Socket.bind((self._IP, self._Port))
+			print('Listening in', self._IP+':'+str(self._Port))
 			self.__Running = True
 		except Exception as e:
 			print(e)
@@ -64,18 +63,18 @@ class Service(object):
 					conn.close()
 					continue
 				self.__Connections[addr[0]] = {'private': False, 'conn': conn}
-				connection = Thread(target=self.__Connection, args=[addr[0],])
+				connection = Thread(target=self._Connection, args=[addr[0],])
 				connection.start()
 			except:
 				pass
 		self.__Socket.close()
 
 	# Thread of connections
-	def __Connection(self, ip):
+	def _Connection(self, ip):
 		self.__Connections[ip].conn.settimeout(self.__Timeout)
 		while self.__Running:
 			try:
-				query = self.__Receive(ip)
+				query = self._Receive(ip)
 				if not query:	break
 				self._HandleMessage(query)
 			except:
@@ -84,7 +83,7 @@ class Service(object):
 		conn.close()
 	
 	# Enconding a message
-	def __EncodeMessage(self, data, type, private=False):
+	def _EncodeMessage(self, data, type, private=False):
 		message = {'type': type,'time_stamp': time.time(), 'data': data}
 		if private:
 			message['key'] = self.__PrivateKey
@@ -93,7 +92,7 @@ class Service(object):
 		return json.dumps(message.decode('latin1'))
 	
 	# Receiving and authenticating a message
-	def __Receive(self, ip):
+	def _Receive(self, ip):
 		enconded_message = self.__Connections[ip].conn.recv(self.__BufferLength)
 		message = json.loads(enconded_message.decode('latin1'))
 		if 'key' in message and 'time_stamp' in message and 'data' in message:
@@ -108,7 +107,7 @@ class Service(object):
 			return
 	
 	# Handling a received message (need to be overrided)
-	def _HandleMessage(self, message):
+	def HandleMessage(self, message):
 		pass
 	
 	def IsRunning(self):

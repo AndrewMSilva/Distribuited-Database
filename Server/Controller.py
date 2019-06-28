@@ -1,12 +1,10 @@
-from Service import Service
-from PageManager import PageManager
+from GroupManager import GroupManager
+from StorageManager import StorageManager
 import Validator
 import sqlparse
+import time
 
-class Controller(Service, PageManager):
-
-	def _HandleMessage(self, message):
-		print(message)
+class Controller(GroupManager, StorageManager):
 
 	def Execute(self, query):
 		query = sqlparse.format(query, reindent=True, keyword_case="upper")
@@ -26,14 +24,21 @@ class Controller(Service, PageManager):
 		else:
 			print('aaa')
 	
+	def __Result(self, status, start_time, values):
+		return {'status': status, 'duration': start_time-time.time(), 'values': values}
+	
 	def __CreateTable(self, stmt):
+		start_time = time.time()
 		args = Validator.CreateTable(stmt, self._Integer, self._Char, self._Varchar)
+		if not args:
+			return self.__Result('Sintax error', start_time, [])
+		
 		table_name = args[0]
 		fields = args[1:]
 		# Check if the table already exists
-		if(self._PageExist(table_name+self._MetaData)):
-			print("Table already exists: "+table_name)
-			return
+		if(self._FileExists(table_name+self._MetaData, self._Group)):
+			return self.__Result('Table already exists', start_time, [])
+		
 		# Creating table files
 		self._CreateMetaPage(table_name, fields)
 		self._CreatePage(table_name, 0)
@@ -42,30 +47,35 @@ class Controller(Service, PageManager):
 
 	def __InsertInto(self, stmt):
 		args = Validator.InsertInto(stmt)
+		if not args:
+			return self.__Result('Sintax error', start_time, [])
+
 		table_name = args[0]
 		values = args[1:]
-
-		if(not self._PageExist(table_name, 0)): #se já existe n cria denovo e retorna nada
-			print("Table not found: "+table_name)
-			return
+		if(not self._FileExists(table_name+'0', self._Group)):
+			return self.__Result('Table not found', start_time, [])
 
 		self._CreateFrame(table_name, 0, values)
 
 	def __DeleteFrom(self, args): # recebe [2, tableName, [[attr, value],[attr, value]]]
 		args = Validator.CreateTable(stmt)
+		if not args:
+			return self.__Result('Sintax error', start_time, [])
 
 		offset = 0
-		while(self._PageExist(table_name,offset)):
+		while(self._FileExists(table_name+str(offset), self._Group)):
 			self._DeleteFrame(table_name, offset, args[1])
 			offset += 1
 
 	def __Select(self, args):
 		args = Validator.CreateTable(stmt)
-		table_name = args[0]
+		if not args:
+			return self.__Result('Sintax error', start_time, [])
 
+		table_name = args[0]
 		offset = 0
 		values = []
-		while(self._PageExist(table_name,offset)):
+		while(self._FileExists(table_name+str(offset), self._Group)):
 			values = values + self._GetFrames(table_name,offset)
 			offset += 1
 		meta = self._GetMeta(table_name)

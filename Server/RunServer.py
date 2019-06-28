@@ -5,8 +5,8 @@ server.Bind()
 server.Listen()
 
 while server.IsRunning():
-    query = input('> ')
-    if query.lower() == 'close':
-        server.Close()
-    else:
-        server.Execute(query)
+	query = input('> ')
+	if query.lower() == 'close':
+		server.Close()
+	else:
+		server.Execute(query)

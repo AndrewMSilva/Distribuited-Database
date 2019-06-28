@@ -1,5 +1,6 @@
+import random
 
-class PageManager(object):
+class StorageManager(object):
 	# Files settings
 	_Directory = './Pages/'
 	_MetaData  = 'Meta'
@@ -15,6 +16,42 @@ class PageManager(object):
 	_Toast   = 3
 	# Values settings
 	_MaxStringLen = 255
+	# Storage settings
+	_StorageSpace = 1024
+	_Addresses    = [False]*_StorageSpace
+	__T = list(range(0, _StorageSpace))
+	random.seed(_StorageSpace)
+	random.shuffle(__T)
+
+	# DHT SECTION #
+	def __GetPointer(self, file_name, group):
+		h = [0]*self._StorageSpace
+		n = len(file_name)
+		for i in range(0, n):
+			h[i+1] = self.__T[h[i] ^ ord(file_name[i])]
+		return h[n]
+
+	def __GetIDByFileName(self, file_name, group):
+		pointer = self.__GetPointer(file_name)
+		local_space = int(self._StorageSpace/len(self._Group))
+		for id in sorted(group.keys()):
+			if pointer < local_space:
+				break
+			else:
+				local_space += local_space
+		return id
+
+	def _FileExists(self, file_name, group):
+		pointer = self.__GetPointer(file_name)
+		return self._Addresses[pointer]
+
+	def _AddFile(self, file_name, group):
+		pointer = self.__GetPointer(file_name)
+		if not self._Addresses[pointer]:
+			self._Addresses[pointer] = True
+			return True
+		else:
+			return False
 
 	# PAGES SECTION #
 	def _PageExist(self, pageName, offset = ''):
