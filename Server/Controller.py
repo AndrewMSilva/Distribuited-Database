@@ -5,6 +5,21 @@ import time
 
 class Controller(StorageManager):
 
+	# Creating a result
+	def __Result(self, status, start_time, data):
+		return {'status': status, 'duration': time.time()-start_time, 'data': data}
+	
+	# Showing a result
+	def ShowResult(self, result):
+		print('Status:', result['status'])
+		print('Duration:', result['duration'])
+		for element in result['data']:
+			print(element)
+	
+	def Include(self, ip):
+		super()._Include(ip)
+
+	# Executing a query
 	def Execute(self, query):
 		query = sqlparse.format(query, reindent=True, keyword_case="upper")
 		stmt = sqlparse.parse(query)
@@ -22,9 +37,6 @@ class Controller(StorageManager):
 			#Select()
 		else:
 			return self.__Result('Command not found', time.time(), [])
-	
-	def __Result(self, status, start_time, data):
-		return {'status': status, 'duration': start_time-time.time(), 'data': data}
 	
 	def __CreateTable(self, stmt):
 		start_time = time.time()

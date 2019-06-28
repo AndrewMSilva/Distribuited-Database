@@ -17,19 +17,17 @@ class GroupManager(Service):
 	def __Agroup(self, ip, id=None, type=__AgroupMessage):
 		# Verifying the connection is itself
 		if ip == self._IP:
-			print('Unable to connect to itself')
-			return
+			return 'Unable to connect to itself'
 		# Verifying if the connection already exists
 		if ip in self._Group.values():
-			print('IP already connected')
-			return
+			return 'Already connected'
 		# Creating connection
 		if self.__SendAgroupMessage(ip, type):
 			if not id:
 				id = len(self._Group)
 			
 			self._Group[id] = ip
-			print('Connected to', str(id)+':'+ip)
+			return 'Connected'
 
 
 	def __SendAgroupMessage(self, ip, type=__AgroupMessage):
@@ -37,10 +35,10 @@ class GroupManager(Service):
 		for i in self._Group:
 			if self._Group[i] != self._IP:
 				data += ' ' + str(i) + ':' + self._Group[i]
-		self._SendMessage(ip, data, type)
+		return self._SendMessage(ip, data, type)
 
-	def Include(self, ip):
-		self.__Agroup(ip, type=self.__IncludeMessage)
+	def _Include(self, ip):
+		return self.__Agroup(ip, type=self.__IncludeMessage)
 
 	def _IncludeReceived(self, message):
 		if message['type'] == self.__AgroupMessage or message['type'] == self.__IncludeMessage:

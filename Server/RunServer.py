@@ -13,6 +13,6 @@ while server.IsRunning():
 	if query.lower() == 'close':
 		server.Close()
 	elif splited and splited[0] == 'include' and len(splited) == 2:
-		print(server.Include(splited[1]))
-	else:
-		print(server.Execute(query))
+		server.ShowResult(server.Include(splited[1]))
+	elif query != '':
+		server.ShowResult(server.Execute(query))

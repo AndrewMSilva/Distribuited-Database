@@ -73,12 +73,12 @@ class Service(object):
 
 	# Thread of connections
 	def _Connection(self, ip):
-		self.__Connections[ip].conn.settimeout(self.__Timeout)
+		self.__Connections[ip]['conn'].settimeout(self.__Timeout)
 		while self.__Running:
 			try:
 				message = self._Receive(self.__Connections[ip].conn)
 				if not message:	break
-				self._HandleMessage(self.__Connections[ip].conn, message)
+				self.HandleMessage(self.__Connections[ip].conn, message)
 			except:
 				pass
 			
@@ -86,7 +86,7 @@ class Service(object):
 	
 	# Enconding a message
 	def _EncodeMessage(self, data, type, private=False):
-		message = {'type': type,'time_stamp': time.time(), 'data': data}
+		message = {'type': type, 'time_stamp': time.time(), 'data': data}
 		if private:
 			message['key'] = self.__PrivateKey
 		else:
