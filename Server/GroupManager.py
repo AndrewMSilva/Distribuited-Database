@@ -9,8 +9,8 @@ class GroupManager(Service):
 	__IncludeMessage = 'include'
 	__AgroupMessage  = 'agroup'
 
-	def Bind(self):
-		self._Bind()
+	def Start(self):
+		self._Start()
 		self._Group = {self._ID: self._IP}
 	
 	''' Group methods '''
@@ -22,7 +22,7 @@ class GroupManager(Service):
 		if ip in self._Group.values():
 			return 'Already connected'
 		# Creating connection
-		if self.__SendAgroupMessage(ip, type):
+		if self._SendMessage(ip, self._Group, type):
 			if not id:
 				id = len(self._Group)
 			
@@ -30,30 +30,21 @@ class GroupManager(Service):
 			return 'Connected'
 		else:
 			return 'Unable to connect'
-
-
-	def __SendAgroupMessage(self, ip, type=__AgroupMessage):
-		data = str(self._ID) + ':' + str(len(self._Group))
-		for i in self._Group:
-			if self._Group[i] != self._IP:
-				data += ' ' + str(i) + ':' + self._Group[i]
-		return self._SendMessage(ip, data, type)
-
+			
 	def _Include(self, ip):
 		return self.__Agroup(ip, type=self.__IncludeMessage)
 
 	def _IncludeReceived(self, message):
 		if message['type'] == self.__AgroupMessage or message['type'] == self.__IncludeMessage:
-			# Verifying the new connection
-			data = message['content'].split()[0].split(':')
-			id = int(data[0])
-			ip = addr[0]
+			group = message['data']
+			# TO DO
+			id = max(group.keys())+1
 			for i in self.__Group:
 				if ip == self.__Group[i]:
 					conn.close()
 					continue
 			# Creating a new connection
-			self.__UpdateGroup(id, message['content'])
+			self.__UpdateGroup(id, message['data'])
 			if message['type'] == Include:
 				print('Connected to', ip)
 				old_id = self._ID

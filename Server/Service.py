@@ -28,7 +28,7 @@ class Service(object):
 	def _NewSocket(self):
 		return socket(AF_INET, SOCK_STREAM)
 
-	def _Bind(self):
+	def _Start(self):
 		# Getting local IP
 		s = socket(AF_INET, SOCK_DGRAM)
 		try:
@@ -44,14 +44,11 @@ class Service(object):
 			self.__Socket.bind((self._IP, self._Port))
 			print('Listening in', self._IP+':'+str(self._Port))
 			self.__Running = True
+			listener = Thread(target=self.__Listener)
+			listener.start()
 		except Exception as e:
 			print(e)
 			return
-	
-	# Listening to new connections
-	def Listen(self):
-		listener = Thread(target=self.__Listener)
-		listener.start()
 	
 	def __Listener(self):
 		if not self.__Socket: return

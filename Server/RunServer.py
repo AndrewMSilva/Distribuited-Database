@@ -1,8 +1,7 @@
 from Controller import Controller
 
 server = Controller("Aa@Si12!", "2fT1@ds?")
-server.Bind()
-server.Listen()
+server.Start()
 
 while server.IsRunning():
 	query = input('> ')
