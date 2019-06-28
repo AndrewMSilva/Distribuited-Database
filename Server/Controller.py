@@ -6,7 +6,7 @@ import time
 class Controller(StorageManager):
 
 	# Creating a result
-	def __Result(self, status, start_time, data):
+	def __Result(self, status, start_time, data=[]):
 		return {'status': status, 'duration': time.time()-start_time, 'data': data}
 	
 	# Showing a result
@@ -17,7 +17,8 @@ class Controller(StorageManager):
 			print(element)
 	
 	def Include(self, ip):
-		super()._Include(ip)
+		start_time = time.time()
+		return self.__Result(super()._Include(ip), start_time)
 
 	# Executing a query
 	def Execute(self, query):
@@ -36,13 +37,13 @@ class Controller(StorageManager):
 				print(i, stmt.tokens[i])
 			#Select()
 		else:
-			return self.__Result('Command not found', time.time(), [])
+			return self.__Result('Command not found', time.time())
 	
 	def __CreateTable(self, stmt):
 		start_time = time.time()
 		args = Validator.CreateTable(stmt, self._Integer, self._Char, self._Varchar)
 		if not args:
-			return self.__Result('Sintax error', start_time, [])
+			return self.__Result('Sintax error', start_time)
 		
 		table_name = args[0]
 		fields = args[1:]
@@ -50,12 +51,12 @@ class Controller(StorageManager):
 		if(self._CreateMetaPage(table_name, fields)):
 			self._CreatePage(table_name, 0)
 		else:
-			return self.__Result('Table already exists', start_time, [])
+			return self.__Result('Table already exists', start_time)
 
 	def __InsertInto(self, stmt):
 		args = Validator.InsertInto(stmt)
 		if not args:
-			return self.__Result('Sintax error', start_time, [])
+			return self.__Result('Sintax error', start_time)
 
 		table_name = args[0]
 		values = args[1:]
@@ -67,7 +68,7 @@ class Controller(StorageManager):
 	def __DeleteFrom(self, args): # recebe [2, tableName, [[attr, value],[attr, value]]]
 		args = Validator.CreateTable(stmt)
 		if not args:
-			return self.__Result('Sintax error', start_time, [])
+			return self.__Result('Sintax error', start_time)
 
 		offset = 0
 		while(self._FileExists(table_name+str(offset), self._Group)):
@@ -77,7 +78,7 @@ class Controller(StorageManager):
 	def __Select(self, args):
 		args = Validator.CreateTable(stmt)
 		if not args:
-			return self.__Result('Sintax error', start_time, [])
+			return self.__Result('Sintax error', start_time)
 
 		table_name = args[0]
 		offset = 0
