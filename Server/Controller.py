@@ -1,10 +1,9 @@
-from GroupManager import GroupManager
 from StorageManager import StorageManager
 import Validator
 import sqlparse
 import time
 
-class Controller(GroupManager, StorageManager):
+class Controller(StorageManager):
 
 	def Execute(self, query):
 		query = sqlparse.format(query, reindent=True, keyword_case="upper")
@@ -22,10 +21,10 @@ class Controller(GroupManager, StorageManager):
 				print(i, stmt.tokens[i])
 			#Select()
 		else:
-			print('aaa')
+			return self.__Result('Command not found', time.time(), [])
 	
-	def __Result(self, status, start_time, values):
-		return {'status': status, 'duration': start_time-time.time(), 'values': values}
+	def __Result(self, status, start_time, data):
+		return {'status': status, 'duration': start_time-time.time(), 'data': data}
 	
 	def __CreateTable(self, stmt):
 		start_time = time.time()
@@ -35,15 +34,11 @@ class Controller(GroupManager, StorageManager):
 		
 		table_name = args[0]
 		fields = args[1:]
-		# Check if the table already exists
-		if(self._FileExists(table_name+self._MetaData, self._Group)):
+		# Creating pages
+		if(self._CreateMetaPage(table_name, fields)):
+			self._CreatePage(table_name, 0)
+		else:
 			return self.__Result('Table already exists', start_time, [])
-		
-		# Creating table files
-		self._CreateMetaPage(table_name, fields)
-		self._CreatePage(table_name, 0)
-		self._CreateToastPage(table_name, 0)
-		self._CreateToastControllerPage(table_name, 0)
 
 	def __InsertInto(self, stmt):
 		args = Validator.InsertInto(stmt)

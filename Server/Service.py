@@ -74,9 +74,9 @@ class Service(object):
 		self.__Connections[ip].conn.settimeout(self.__Timeout)
 		while self.__Running:
 			try:
-				query = self._Receive(ip)
-				if not query:	break
-				self._HandleMessage(query)
+				message = self._Receive(self.__Connections[ip].conn)
+				if not message:	break
+				self._HandleMessage(self.__Connections[ip].conn, message)
 			except:
 				pass
 			
@@ -92,8 +92,8 @@ class Service(object):
 		return json.dumps(message.decode('latin1'))
 	
 	# Receiving and authenticating a message
-	def _Receive(self, ip):
-		enconded_message = self.__Connections[ip].conn.recv(self.__BufferLength)
+	def _Receive(self, conn):
+		enconded_message = conn.recv(self.__BufferLength)
 		message = json.loads(enconded_message.decode('latin1'))
 		if 'key' in message and 'time_stamp' in message and 'data' in message:
 			if message.key != self.__PrivateKey and message.key != self.__PublicKey:
@@ -107,7 +107,7 @@ class Service(object):
 			return
 	
 	# Handling a received message (need to be overrided)
-	def HandleMessage(self, message):
+	def HandleMessage(self, conn, message):
 		pass
 	
 	def IsRunning(self):

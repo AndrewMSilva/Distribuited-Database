@@ -2,15 +2,12 @@ from Service import Service
 
 class GroupManager(Service):
 	# Group settings
-	__ID   = 0
+	_ID    = 0
 	_Group = {}
 	# Message types
 	__Query   = 0
 	__Include = 1
 	__Agroup  = 2
-
-	def HandleMessage(self, message):
-		print(message)
 	
 	''' Group methods '''
 	def __Agroup(self, ip, id=None, type=__Agroup):
@@ -32,51 +29,56 @@ class GroupManager(Service):
 
 
 	def __SendAgroupMessage(self, ip, type=__Agroup):
-		content = str(self.__ID) + ':' + str(len(self._Group))
+		data = str(self._ID) + ':' + str(len(self._Group))
 		for i in self._Group:
 			if self._Group[i] != self._IP:
-				content += ' ' + str(i) + ':' + self._Group[i]
-
-		enconded_message = self._EncodeMessage(type, content)
-		try:
-			s = socket(AF_INET, SOCK_STREAM)
-			s.connect((ip, self._Port))
-			s.send(enconded_message)
-			s.close()
-			return True
-		except Exception as e:
-			print('Error:', e)
-			return False
+				data += ' ' + str(i) + ':' + self._Group[i]
+		self._SendMessage(ip, data, type)
 
 	def Include(self, ip):
 		self.__Agroup(ip, type=self.__Include)
 
 	def _IncludeReceived(self, message):
-		if message['Type'] == self.__Agroup or message['Type'] == self.__Include:
+		if message['type'] == self.__Agroup or message['type'] == self.__Include:
 			# Verifying the new connection
-			content = message['Content'].split()[0].split(':')
-			id = int(content[0])
+			data = message['content'].split()[0].split(':')
+			id = int(data[0])
 			ip = addr[0]
 			for i in self.__Group:
 				if ip == self.__Group[i]:
 					conn.close()
 					continue
 			# Creating a new connection
-			self.__UpdateGroup(id, message['Content'])
-			if message['Type'] == Include:
+			self.__UpdateGroup(id, message['content'])
+			if message['type'] == Include:
 				print('Connected to', ip)
-				old_id = self.__ID
+				old_id = self._ID
 				del self._Group[old_id]
-				self.__ID = int(content[1])
-				self._Group[self.__ID] = LocalIP
+				self._ID = int(data[1])
+				self._Group[self._ID] = LocalIP
 				self.__SendAgroupMessage(ip)
 			self._Group[id] = ip
 
-	def __UpdateGroup(self, id, content):
-		content = content.split()[1:]
-		for addr in content:
+	def __UpdateGroup(self, id, data):
+		data = data.split()[1:]
+		for addr in data:
 			addr = addr.split(':')
 			id = addr[0]
 			ip = addr[1]
 			if not ip in self._Group.values():
 				self.__Agroup(ip, id)
+
+	def _SendMessage(self, ip, data, type, wait_result=False):
+		enconded_message = self._EncodeMessage(data, type, True)
+		result = True
+		try:
+			s = socket(AF_INET, SOCK_STREAM)
+			s.connect((ip, self._Port))
+			s.send(enconded_message)
+			if wait_result:
+				result = self._Receive(s)
+		except Exception as e:
+			result = False
+		finally:
+			s.close()
+			return result
