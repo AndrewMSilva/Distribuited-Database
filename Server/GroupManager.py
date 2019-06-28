@@ -28,7 +28,7 @@ class GroupManager(Service):
 			
 			self._Group[id] = ip
 			return 'Connected'
-		else
+		else:
 			return 'Unable to connect to '+ip
 
 
