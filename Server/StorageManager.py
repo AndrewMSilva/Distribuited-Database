@@ -20,9 +20,9 @@ class StorageManager(GroupManager):
 	random.seed(_Addressement)
 	random.shuffle(__T)
 	# Message types for DHT
-	_Result			   = 3
-	_CreateMetaPageMessage = 4
-	_CreatePageMesssage    = 5
+	_ResultMessage		   = 'result'
+	_CreateMetaPageMessage = 'create_meta_page'
+	_CreatePageMesssage    = 'create_page'
 
 	# DHT SECTION #
 	def _GetPointer(self, file_name):

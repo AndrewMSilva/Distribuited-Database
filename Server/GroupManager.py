@@ -5,16 +5,16 @@ class GroupManager(Service):
 	_ID    = 0
 	_Group = {}
 	# Message types
-	__Query   = 0
-	__Include = 1
-	__Agroup  = 2
+	__QueryMessage   = 'query'
+	__IncludeMessage = 'include'
+	__AgroupMessage  = 'agroup'
 
 	def Bind(self):
-		super().Bind()
-		self._Group = {LocalID: LocalIP}
+		self._Bind()
+		self._Group = {self._ID: self._IP}
 	
 	''' Group methods '''
-	def __Agroup(self, ip, id=None, type=__Agroup):
+	def __Agroup(self, ip, id=None, type=__AgroupMessage):
 		# Verifying the connection is itself
 		if ip == self._IP:
 			print('Unable to connect to itself')
@@ -32,7 +32,7 @@ class GroupManager(Service):
 			print('Connected to', str(id)+':'+ip)
 
 
-	def __SendAgroupMessage(self, ip, type=__Agroup):
+	def __SendAgroupMessage(self, ip, type=__AgroupMessage):
 		data = str(self._ID) + ':' + str(len(self._Group))
 		for i in self._Group:
 			if self._Group[i] != self._IP:
@@ -40,10 +40,10 @@ class GroupManager(Service):
 		self._SendMessage(ip, data, type)
 
 	def Include(self, ip):
-		self.__Agroup(ip, type=self.__Include)
+		self.__Agroup(ip, type=self.__IncludeMessage)
 
 	def _IncludeReceived(self, message):
-		if message['type'] == self.__Agroup or message['type'] == self.__Include:
+		if message['type'] == self.__AgroupMessage or message['type'] == self.__IncludeMessage:
 			# Verifying the new connection
 			data = message['content'].split()[0].split(':')
 			id = int(data[0])

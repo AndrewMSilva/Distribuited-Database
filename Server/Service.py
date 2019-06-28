@@ -26,11 +26,11 @@ class Service(object):
 		super().__init__()
 	
 	def _NewSocket(self):
-		return socket(AF_INET, SOCK_DGRAM)
+		return socket(AF_INET, SOCK_STREAM)
 
-	def Bind(self):
+	def _Bind(self):
 		# Getting local IP
-		s = self._NewSocket()
+		s = socket(AF_INET, SOCK_DGRAM)
 		try:
 			s.connect(('10.255.255.255', 1))
 			self._IP = s.getsockname()[0]
