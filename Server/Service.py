@@ -26,9 +26,12 @@ class Service(object):
 		self.__PublicKey = hashlib.sha1(public_key.encode('latin1')).hexdigest()
 		super().__init__()
 	
+	def _Socket(self):
+		return socket(AF_INET, SOCK_DGRAM)
+
 	def Bind(self):
 		# Getting local IP
-		s = socket(AF_INET, SOCK_DGRAM)
+		s = self._Socket()
 		try:
 			s.connect(('10.255.255.255', 1))
 			self._IP = s.getsockname()[0]
