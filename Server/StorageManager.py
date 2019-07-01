@@ -28,9 +28,9 @@ class StorageManager(GroupManager):
 	# Message types for DHT
 	_ResultMessage		   = 'result'
 	_CreateMetaPageMessage = 'create_meta_page'
-	_CreatePageMesssage    = 'create_page'
+	_CreatePageMessage     = 'create_page'
 	_CreateFrameMassege	   = 'create_frame'
-	_GetMetaMesssage	   = 'get_meta'
+	_GetMetaMessage	   = 'get_meta'
 
 	# DHT SECTION #
 	def __PearsonHash(self, file_name):
@@ -144,10 +144,10 @@ class StorageManager(GroupManager):
 		else:
 			data = {'table_name': table_name, 'fields': fields}
 			result = self._SendMessage(ip, data, self._CreateMetaPageMessage, True)
-			return result['data']
+			return result.data
 	
 	def _GetMeta(self, table_name):
-		file_name = self._Page(table_name, self._GetMetaMesssage)
+		file_name = self._Page(table_name, self._GetMetaMessage)
 		# Getting an available pointer or stopping if it does not exists
 		pointer = self.__GetPointer(file_name)
 		if pointer is None:
@@ -179,8 +179,8 @@ class StorageManager(GroupManager):
 				return False
 		else:
 			data = {'table_name': table_name}
-			result = self._SendMessage(ip, data, self._GetMetaMesssage, True)
-			return result['data']
+			result = self._SendMessage(ip, data, self._GetMetaMessage, True)
+			return result.data
 
 	# PAGE SECTION #
 
@@ -222,7 +222,7 @@ class StorageManager(GroupManager):
 		else:
 			data = {'table_name': table_name, 'offset': offset}
 			result = self._SendMessage(ip, data, self._CreatePageMessage, True)
-			return result['data']
+			return result.data
 
 
 	def _CreateFrame(self, table_name, offset, values): # n = o somatório dos bytes da tupla
@@ -336,7 +336,7 @@ class StorageManager(GroupManager):
 		else:
 			data = {'table_name': table_name, 'offset': offset}
 			result = self._SendMessage(ip, data, self._, True)
-			return result['data']
+			return result.data
 
 	def _DeleteFrame(self, file_name, offset, values):
 		try:

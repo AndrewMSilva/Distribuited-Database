@@ -21,9 +21,9 @@ class Controller(StorageManager):
 				old_group = self._UpdateGroup(message)
 			elif message['type'] == self._CreateMetaPageMessage:
 				result = self._CreateMetaPage(message['data']['table_name'], message['data']['fields'])
-			elif message['type'] == self._CreatePageMesssage:
+			elif message['type'] == self._CreatePageMessage:
 				result = self._CreatePage(message['data']['table_name'], message['data']['offset'])
-			elif message['type'] == self._GetMetaMesssage:
+			elif message['type'] == self._GetMetaMessage:
 				result = self._GetMeta(message['data']['table_name'])
 			elif message['type'] == self._CreateFrameMassege:
 				result = self._CreateFrame(message['data']['table_name'], message['data']['offset'])
