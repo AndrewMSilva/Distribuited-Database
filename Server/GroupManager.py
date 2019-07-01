@@ -83,7 +83,7 @@ class GroupManager(Service):
 		try:
 			group = message['data']
 			# Checking if the groups match
-			if group != self._Group:
+			if list(group.values()) != list(self._Group.values()):
 				# Getting all ips
 				ips = list(self._Group.values())
 				for ip in group.values():
