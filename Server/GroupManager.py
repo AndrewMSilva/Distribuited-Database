@@ -84,7 +84,7 @@ class GroupManager(Service):
 			# Checking if the groups match
 			if group != self._Group:
 				# Creating a copy of the group before update it
-				copy = self._Group.copy()
+				result = self._Group.copy()
 				# Updateing group
 				for ip in group:
 					if not ip in self._Group:

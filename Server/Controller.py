@@ -40,10 +40,12 @@ class Controller(StorageManager):
 	
 	# Showing a result
 	def ShowResult(self, result):
+		print()
 		print('Status:', result['status'])
 		print('Duration:', result['duration'])
 		for element in result['data']:
 			print(element)
+		print()
 	
 	def Invite(self, ip):
 		start_time = time.time()
