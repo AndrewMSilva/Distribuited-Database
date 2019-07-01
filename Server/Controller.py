@@ -4,6 +4,34 @@ import sqlparse
 import time
 
 class Controller(StorageManager):
+	_QueryMessage = 'query'
+
+	def Start(self):
+		self._StartService()
+		self._InitializeGroup()
+		self._InitializeStorage()
+
+	def HandleMessage(self, conn, message):
+		print(message)
+		result = None
+		# Executing requisition
+		if message['type'] == self._QueryMessage:
+			result = self.Execute(query)
+		elif message['type'] == self._InviteMessage:
+			old_group = self._UpdateGroup(message)
+			
+		elif message['type'] == self._CreateMetaPageMessage:
+			result = self._CreateMetaPage(message['data']['table_name'], message['data']['fields'])
+		elif message['type'] == self._CreatePageMesssage:
+			result = self._CreatePage(message['data']['table_name'], message['data']['offset'])
+		elif message['type'] == self._GetMetaMesssage:
+			result = self._GetMeta(message['data']['table_name'])
+		elif message['type'] == self._CreateFrameMassege:
+			result = self._CreateFrame(message['data']['table_name'], message['data']['offset'])
+		# Sending result
+		if not result is None:
+			enconded_message = self._EncodeMessage(result, self._Result, True)
+			conn.send(enconded_message)
 
 	# Creating a result
 	def __Result(self, status, start_time, data=[]):
@@ -16,13 +44,13 @@ class Controller(StorageManager):
 		for element in result['data']:
 			print(element)
 	
-	def Include(self, ip):
+	def Invite(self, ip):
 		start_time = time.time()
-		return self.__Result(super()._Include(ip), start_time)
+		return self.__Result(super()._Invite(ip), start_time)
 
 	# Executing a query
 	def Execute(self, query):
-		query = sqlparse.format(query, reindent=True, keyword_case="upper")
+		query = sqlparse.format(query, reindent=True, keyword_case='upper')
 		stmt = sqlparse.parse(query)
 		stmt = stmt[0]
 		function = stmt.get_type()
@@ -50,6 +78,7 @@ class Controller(StorageManager):
 		# Creating pages
 		if(self._CreateMetaPage(table_name, fields)):
 			self._CreatePage(table_name, 0)
+			return self.__Result('Table created', start_time)
 		else:
 			return self.__Result('Table already exists', start_time)
 

@@ -11,7 +11,7 @@ while server.IsRunning():
 		splited = None
 	if query.lower() == 'close':
 		server.Close()
-	elif splited and splited[0] == 'include' and len(splited) == 2:
-		server.ShowResult(server.Include(splited[1]))
+	elif splited and splited[0] == 'invite' and len(splited) == 2:
+		server.ShowResult(server.Invite(splited[1]))
 	elif query != '':
 		server.ShowResult(server.Execute(query))

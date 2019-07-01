@@ -12,7 +12,7 @@ class Service(object):
 	__Running = False
 	__Socket  = None
 	__Connections = {}
-	__Timeout     = 0.1
+	_Timeout 	  = 1
 	# Authentication settings
 	__PrivateKey = None
 	__PublicKey  = None
@@ -28,7 +28,7 @@ class Service(object):
 	def _NewSocket(self):
 		return socket(AF_INET, SOCK_STREAM)
 
-	def _Start(self):
+	def _StartService(self):
 		# Getting local IP
 		s = socket(AF_INET, SOCK_DGRAM)
 		try:
@@ -52,7 +52,7 @@ class Service(object):
 	
 	def __Listener(self):
 		if not self.__Socket: return
-		self.__Socket.settimeout(self.__Timeout)
+		self.__Socket.settimeout(self._Timeout)
 		self.__Socket.listen(1)
 		while self.__Running:
 			try:
@@ -70,7 +70,7 @@ class Service(object):
 
 	# Thread of connections
 	def _Connection(self, ip):
-		self.__Connections[ip]['conn'].settimeout(self.__Timeout)
+		self.__Connections[ip]['conn'].settimeout(self._Timeout)
 		while self.__Running:
 			try:
 				message = self._Receive(self.__Connections[ip].conn)
