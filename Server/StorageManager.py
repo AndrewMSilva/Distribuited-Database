@@ -76,6 +76,7 @@ class StorageManager(GroupManager):
 		try:
 			self._Storage[pointer] = file_name
 			self.__SaveStorage()
+			print('Storage updated')
 			if broadcast:
 				data = {'pointer': pointer, 'file_name': file_name}
 				self._GroupBroadcast(data, self._InsertFileMessage)
