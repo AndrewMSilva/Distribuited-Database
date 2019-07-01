@@ -29,7 +29,7 @@ class Controller(StorageManager):
 				result = self._CreateFrame(message['data']['table_name'], message['data']['offset'])
 		# Sending result
 		if not result is None:
-			enconded_message = self._EncodeMessage(result, self._Result, True)
+			enconded_message = self._EncodeMessage(result, result, True)
 			conn.send(enconded_message)
 
 	# Creating a result

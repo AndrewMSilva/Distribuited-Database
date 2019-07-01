@@ -144,7 +144,7 @@ class StorageManager(GroupManager):
 		else:
 			data = {'table_name': table_name, 'fields': fields}
 			result = self._SendMessage(ip, data, self._CreateMetaPageMessage, True)
-			return result.data
+			return result['data']
 	
 	def _GetMeta(self, table_name):
 		file_name = self._Page(table_name, self._GetMetaMesssage)
@@ -180,7 +180,7 @@ class StorageManager(GroupManager):
 		else:
 			data = {'table_name': table_name}
 			result = self._SendMessage(ip, data, self._GetMetaMesssage, True)
-			return result.data
+			return result['data']
 
 	# PAGE SECTION #
 
@@ -222,7 +222,7 @@ class StorageManager(GroupManager):
 		else:
 			data = {'table_name': table_name, 'offset': offset}
 			result = self._SendMessage(ip, data, self._CreatePageMessage, True)
-			return result.data
+			return result['data']
 
 
 	def _CreateFrame(self, table_name, offset, values): # n = o somatório dos bytes da tupla
@@ -336,7 +336,7 @@ class StorageManager(GroupManager):
 		else:
 			data = {'table_name': table_name, 'offset': offset}
 			result = self._SendMessage(ip, data, self._, True)
-			return result.data
+			return result['data']
 
 	def _DeleteFrame(self, file_name, offset, values):
 		try:
