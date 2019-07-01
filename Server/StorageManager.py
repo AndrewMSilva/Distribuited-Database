@@ -71,8 +71,8 @@ class StorageManager(GroupManager):
 			else:
 				pointer += 1
 
-	async def __InsertFile(self, pointer, file_name):
-		await self.__StorageLock.acquire()
+	def __InsertFile(self, pointer, file_name):
+		self.__StorageLock.acquire()
 		try:
 			self._Storage[pointer] = file_name
 			print(self._Storage[pointer])

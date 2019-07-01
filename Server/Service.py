@@ -11,13 +11,12 @@ class Service(object):
 	# Control settings
 	__Running = False
 	__Socket  = None
-	__Connections = {}
 	_Timeout 	  = 1
 	# Authentication settings
 	__PrivateKey = None
 	__PublicKey  = None
 	# Message settings
-	__BufferLength = 8*1024
+	__BufferLength = 10*1024
 
 	def __init__(self, private_key, public_key):
 		# Hashing keys
@@ -57,28 +56,26 @@ class Service(object):
 		while self.__Running:
 			try:
 				conn, addr = self.__Socket.accept()
-				i = len(self.__Connections)
-				if addr[0] in self.__Connections:
-					conn.close()
-					continue
-				self.__Connections[addr[0]] = {'private': False, 'conn': conn}
-				connection = Thread(target=self._Connection, args=[addr[0],])
+				connection = Thread(target=self._Connection, args=[conn,])
 				connection.start()
 			except:
 				pass
 		self.__Socket.close()
 
 	# Thread of connections
-	def _Connection(self, ip):
-		self.__Connections[ip]['conn'].settimeout(self._Timeout)
-		while self.__Running:
-			try:
-				message = self._Receive(self.__Connections[ip].conn)
-				if not message:	break
-				self.HandleMessage(self.__Connections[ip].conn, message)
-			except:
-				pass
-			
+	def _Connection(self, conn):
+		conn.settimeout(self._Timeout)
+		waiting_message = True
+		while waiting_message:
+			message = self._Receive(conn)
+			if not message:
+				break
+			elif message == TimeoutError:
+				continue
+			waiting_message = False
+			private = message['key'] == self.__PrivateKey
+			self.HandleMessage(conn, message, private)
+
 		conn.close()
 	
 	# Enconding a message
@@ -95,24 +92,19 @@ class Service(object):
 		try:
 			enconded_message = conn.recv(self.__BufferLength)
 			message = json.loads(enconded_message.decode('latin1'))
-			print(message)
-			if 'key' in message and 'time_stamp' in message and 'data' in message:
-				if message.key != self.__PrivateKey and message.key != self.__PublicKey:
-					return
-				elif message.key == self.__PrivateKey:
-					self.__Connections[ip].private = True
-				elif message.key == self.__PublicKey:
-					self.__Connections[ip].private = False
-				return message					
+			if 'key' in message and 'type' in message and 'time_stamp' in message and 'data' in message and (message['key'] == self.__PrivateKey or message['key'] == self.__PublicKey):
+				return message
 			else:
-				return
-		except:
-			return
+				return None
+		except TimeoutError as e:
+			return e
+		else:
+			return None			
 	
-	# Handling a received message (need to be overrided)
-	def HandleMessage(self, conn, message):
+	# This function will do something with the received messages, thus need to be overrided
+	def HandleMessage(self, conn, message, private):
 		pass
-	
+
 	def IsRunning(self):
 		return self.__Running
 

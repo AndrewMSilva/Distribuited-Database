@@ -11,23 +11,22 @@ class Controller(StorageManager):
 		self._InitializeGroup()
 		self._InitializeStorage()
 
-	def HandleMessage(self, conn, message):
-		print(message)
+	def HandleMessage(self, conn, message, private):
 		result = None
 		# Executing requisition
 		if message['type'] == self._QueryMessage:
 			result = self.Execute(query)
-		elif message['type'] == self._InviteMessage:
-			old_group = self._UpdateGroup(message)
-			
-		elif message['type'] == self._CreateMetaPageMessage:
-			result = self._CreateMetaPage(message['data']['table_name'], message['data']['fields'])
-		elif message['type'] == self._CreatePageMesssage:
-			result = self._CreatePage(message['data']['table_name'], message['data']['offset'])
-		elif message['type'] == self._GetMetaMesssage:
-			result = self._GetMeta(message['data']['table_name'])
-		elif message['type'] == self._CreateFrameMassege:
-			result = self._CreateFrame(message['data']['table_name'], message['data']['offset'])
+		elif private:
+			if message['type'] == self._InviteMessage:
+				old_group = self._UpdateGroup(message)
+			elif message['type'] == self._CreateMetaPageMessage:
+				result = self._CreateMetaPage(message['data']['table_name'], message['data']['fields'])
+			elif message['type'] == self._CreatePageMesssage:
+				result = self._CreatePage(message['data']['table_name'], message['data']['offset'])
+			elif message['type'] == self._GetMetaMesssage:
+				result = self._GetMeta(message['data']['table_name'])
+			elif message['type'] == self._CreateFrameMassege:
+				result = self._CreateFrame(message['data']['table_name'], message['data']['offset'])
 		# Sending result
 		if not result is None:
 			enconded_message = self._EncodeMessage(result, self._Result, True)

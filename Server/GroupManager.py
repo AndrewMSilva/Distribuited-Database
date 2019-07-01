@@ -24,6 +24,9 @@ class GroupManager(Service):
 			group_json = file.read()
 			file.close()
 			self._Group = json.loads(group_json)
+			for id in self._Group:
+				if self._Group[id] == self._IP:
+					self._ID = id
 			return True
 		except:
 			return False
@@ -73,31 +76,32 @@ class GroupManager(Service):
 		else:
 			return 'Unable to connect'
 
-	async def _UpdateGroup(self, message):
+	def _UpdateGroup(self, message):
 		# Using mutex to update group
 		result = False
-		await self.__GroupLock.acquire()
+		self.__GroupLock.acquire()
 		try:
 			group = message['data']
 			# Checking if the groups match
 			if group != self._Group:
 				# Getting all ips
-				ips = self._Group.values()
+				ips = list(self._Group.values())
 				for ip in group.values():
 					if not ip in ips:
 						ips.append(ip)
-				ips = sort(ips)
+				ips = sorted(ips)
 				# Distributing ids
 				group = {}
 				for id in range(0, len(ips)):
-					group[id] = ip
+					group[id] = ips[id]
 					if ip == self._IP:
 						self._ID = id
+				# Getting a copy of the group before update it
+				result = self._Group.copy()
 				# Updating group
 				self._Group = group.copy()
 				self.__SaveGroup()
-				# Return a copy of the old group
-				result = self._Group.copy()
+				print('Group updated')
 				# Sending the new group to other devices
 				self._GroupBroadcast(self._Group, self._InviteMessage)
 		except:

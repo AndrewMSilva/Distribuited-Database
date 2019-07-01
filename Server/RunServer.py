@@ -3,8 +3,11 @@ from Controller import Controller
 server = Controller("Aa@Si12!", "2fT1@ds?")
 server.Start()
 
+if server.IsRunning():
+	print('Ready for commands')
+	
 while server.IsRunning():
-	query = input('> ')
+	query = input()
 	try:
 		splited = query.lower().split()
 	except:
