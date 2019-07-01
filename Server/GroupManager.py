@@ -12,6 +12,31 @@ class GroupManager(Service):
 	# Configs settings
 	_ConfigsDirectory = './Configs/'
 	__GroupConfigs	   = 'Group.config'
+
+	def _InitializeGroup(self):
+		if not self.__GetGroup():
+			self._Group = {self._ID: self._IP}
+			self.__SaveGroup()
+	
+	def __GetGroup(self):
+		try:
+			file = open(self._ConfigsDirectory+self.__GroupConfigs, 'r')
+			group_json = file.read()
+			file.close()
+			self._Group = json.loads(group_json)
+			return True
+		except:
+			return False
+
+	def __SaveGroup(self):
+		try:
+			file = open(self._ConfigsDirectory+self.__GroupConfigs, 'w')
+			group_json = json.dumps(self._Group)
+			file.write(group_json)
+			file.close()
+			return True
+		except:
+			return False
 	
 	def _SendMessage(self, ip, data, type, wait_result=False):
 		enconded_message = self._EncodeMessage(data, type, True)
@@ -42,7 +67,7 @@ class GroupManager(Service):
 		if ip in self._Group.values():
 			return 'Already connected'
 		# Sending invitation
-		result = self._SendMessage(ip, self._Group, self._InviteMessage, True)
+		result = self._SendMessage(ip, self._Group, self._InviteMessage)
 		if result:
 			return 'Invitation sent'
 		else:
@@ -81,27 +106,3 @@ class GroupManager(Service):
 			self.__GroupLock.release()
 			return result
 	
-	def __GetGroup(self):
-		try:
-			file = open(self._ConfigsDirectory+self.__GroupConfigs, 'r')
-			group_json = file.read()
-			file.close()
-			self._Group = json.loads(group_json)
-			return True
-		except:
-			return False
-
-	def __SaveGroup(self):
-		try:
-			file = open(self._ConfigsDirectory+self.__GroupConfigs, 'w')
-			group_json = json.dumps(self._Group)
-			file.write(group_json)
-			file.close()
-			return True
-		except:
-			return False
-
-	def _InitializeGroup(self):
-		if not self.__GetGroup():
-			self._Group = {self._ID: self._IP}
-			self.__SaveGroup()

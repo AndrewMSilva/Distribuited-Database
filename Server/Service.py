@@ -88,7 +88,7 @@ class Service(object):
 			message['key'] = self.__PrivateKey
 		else:
 			message['key'] = self.__PublicKey
-		return json.dumps(message)
+		return json.dumps(message).encode('latin1')
 	
 	# Receiving and authenticating a message
 	def _Receive(self, conn):
