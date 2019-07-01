@@ -4,8 +4,7 @@ import json
 
 class GroupManager(Service):
 	# Group settings
-	_ID    = 0
-	_Group = {}
+	_Group = []
 	__GroupLock = Lock()
 	# Message types
 	_InviteMessage  = 'invite'
@@ -15,7 +14,7 @@ class GroupManager(Service):
 
 	def _InitializeGroup(self):
 		if not self.__GetGroup():
-			self._Group = {self._ID: self._IP}
+			self._Group = [self._IP]
 			self.__SaveGroup()
 	
 	def __GetGroup(self):
@@ -24,9 +23,9 @@ class GroupManager(Service):
 			group_json = file.read()
 			file.close()
 			self._Group = json.loads(group_json)
-			for id in self._Group:
-				if self._Group[id] == self._IP:
-					self._ID = id
+			if not self._IP in self._Group:
+				print('Local IP not found in', self.__GroupConfigs)
+				return False
 			return True
 		except:
 			return False
@@ -58,7 +57,7 @@ class GroupManager(Service):
 			return result
 	
 	def _GroupBroadcast(self, data, type):
-		for ip in self._Group.values():
+		for ip in self._Group:
 			if ip != self._IP:
 				self._SendMessage(ip, data, type)
 
@@ -67,7 +66,7 @@ class GroupManager(Service):
 		if ip == self._IP:
 			return 'Unable to connect to itself'
 		# Verifying if the connection already exists
-		if ip in self._Group.values():
+		if ip in self._Group:
 			return 'Already connected'
 		# Sending invitation
 		result = self._SendMessage(ip, self._Group, self._InviteMessage)
@@ -83,23 +82,15 @@ class GroupManager(Service):
 		try:
 			group = message['data']
 			# Checking if the groups match
-			if list(group.values()) != list(self._Group.values()):
-				# Getting all ips
-				ips = list(self._Group.values())
-				for ip in group.values():
-					if not ip in ips:
-						ips.append(ip)
-				ips = sorted(ips)
-				# Distributing ids
-				group = {}
-				for id in range(0, len(ips)):
-					group[id] = ips[id]
-					if ip == self._IP:
-						self._ID = id
-				# Getting a copy of the group before update it
-				result = self._Group.copy()
+			if group != self._Group:
+				# Creating a copy of the group before update it
+				copy = self._Group.copy()
+				# Updateing group
+				for ip in group:
+					if not ip in self._Group:
+						self._Group.append(ip)
+				self._Group = sorted(self._Group)
 				# Updating group
-				self._Group = group.copy()
 				self.__SaveGroup()
 				print('Group updated')
 				# Sending the new group to other devices

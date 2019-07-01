@@ -41,14 +41,14 @@ class StorageManager(GroupManager):
 			h[i+1] = self.__T[h[i] ^ ord(file_name[i])]
 		return h[n]
 	
-	def __GetDevice(self, pointer):
+	def __GetIPByPointer(self, pointer):
 		local_space = int(self._Addressement/len(self._Group))
-		for id in sorted(self._Group.keys()):
+		for ip in self._Group:
 			if pointer < local_space:
 				break
 			else:
 				local_space += local_space
-		return id, self._Group[id]
+		return ip
 	
 	def __GetPointer(self, file_name, only_available=False):
 		backward = False
@@ -119,7 +119,7 @@ class StorageManager(GroupManager):
 		if pointer is None:
 			return False
 		# Checking if the file need to be created locally
-		id, ip = self.__GetDevice(pointer)
+		ip = self.__GetIPByPointer(pointer)
 		if ip == self._IP:
 			try:
 				# Creating file
@@ -154,7 +154,7 @@ class StorageManager(GroupManager):
 		if pointer is None:
 			return False
 		# Checking if the file need to be created locally
-		id, ip = self.__GetDevice(pointer)
+		ip = self.__GetIPByPointer(pointer)
 		if ip == self._IP:
 			try:
 				file = open(self._Directory+file_name, 'rb')
@@ -192,7 +192,7 @@ class StorageManager(GroupManager):
 		if pointer is None:
 			return False
 		# Checking if the file need to be created locally
-		id, ip = self.__GetDevice(pointer)
+		ip = self.__GetIPByPointer(pointer)
 		if ip == self._IP:
 			try:
 				file = open(self._Directory+file_name, 'w+b')
@@ -233,7 +233,7 @@ class StorageManager(GroupManager):
 		if pointer is None:
 			return False
 		# Checking if the file need to be created locally
-		id, ip = self.__GetDevice(pointer)
+		ip = self.__GetIPByPointer(pointer)
 		if ip == self._IP:
 			try:
 				file = open(self._Directory+file_name, 'r+b')
