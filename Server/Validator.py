@@ -72,7 +72,7 @@ def InsertInto(stmt):
 	for token in stmt.tokens:
 		if token.value == " ":
 			continue
-		elif not expected:
+		elif not expected and 'VALUES' in token.value:
 			break
 		elif expected == 'table':
 			table_name = token.value

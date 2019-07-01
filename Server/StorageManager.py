@@ -28,9 +28,10 @@ class StorageManager(GroupManager):
 	# Message types for DHT
 	_ResultMessage		   = 'result'
 	_CreateMetaPageMessage = 'create_meta_page'
+	_GetMetaMessage 	   = 'get_meta'
 	_CreatePageMessage     = 'create_page'
 	_CreateFrameMassege	   = 'create_frame'
-	_GetMetaMessage	   = 'get_meta'
+	_DeleteFrameMessage	   = 'delete_frame'
 
 	# DHT SECTION #
 	def __PearsonHash(self, file_name):
@@ -54,6 +55,7 @@ class StorageManager(GroupManager):
 		backward = False
 		initial_pointer = self.__PearsonHash(file_name)
 		pointer = initial_pointer
+		print(file_name)
 		while True:
 			if pointer >= self._Addressement:
 				backward = True
@@ -70,6 +72,13 @@ class StorageManager(GroupManager):
 				pointer -= 1
 			else:
 				pointer += 1
+
+	def _FileExists(self, file_name):
+		pointer = self.__GetPointer(file_name)
+		if pointer is None:
+			return False
+		else:
+			return True
 
 	def _InsertFile(self, pointer, file_name, broadcast=True):
 		self.__StorageLock.acquire()
@@ -148,9 +157,10 @@ class StorageManager(GroupManager):
 			return result['data']
 	
 	def _GetMeta(self, table_name):
-		file_name = self._Page(table_name, self._GetMetaMessage)
+		file_name = self._Page(table_name, self._GetMeta)
 		# Getting an available pointer or stopping if it does not exists
 		pointer = self.__GetPointer(file_name)
+		print(pointer)
 		if pointer is None:
 			return False
 		# Checking if the file need to be created locally
@@ -226,7 +236,7 @@ class StorageManager(GroupManager):
 			return result['data']
 
 
-	def _CreateFrame(self, table_name, offset, values): # n = o somatório dos bytes da tupla
+	def _CreateFrame(self, table_name, offset, values):
 		file_name = self._Page(table_name, offset)
 		# Getting an available pointer or stopping if it does not exists
 		pointer = self.__GetPointer(file_name)
@@ -237,9 +247,11 @@ class StorageManager(GroupManager):
 		if ip == self._IP:
 			try:
 				file = open(self._Directory+file_name, 'r+b')
-				# calculando somatório de bytes da tupla e verificando os tipos
+				# Checking the types of the received values
 				tupleLen = 0
 				meta = self._GetMeta(table_name)
+				if not meta:
+					return False
 				metaLen = meta[0]
 				meta = meta[1:]
 				if(metaLen != len(values)):
@@ -271,21 +283,24 @@ class StorageManager(GroupManager):
 						print('Entry and type do not match: check the sequence') # a entrada e o tipo não combinam
 						file.close()
 						return False
-				# verificando se há espaço na página
-				file.seek(4, 0) # posição de início do pd_lower
-				pd_lower = int.from_bytes(file.read(2), 'little') # lendo o ponteiro que indica onde colocar o próximo item
-				file.seek(6, 0) # posição de início do pd_upper
-				pd_upper = int.from_bytes(file.read(2), 'little') # lendo o ponteiro que indica onde colocar a próxima tupla
+				# Getting page available space
+				# pd_lower: where insert a new item
+				file.seek(4, 0)
+				pd_lower = int.from_bytes(file.read(2), 'little')
+				file.seek(6, 0) # pd_upper: where insert a new tuple
+				pd_upper = int.from_bytes(file.read(2), 'little')
 				itemLen = 3 + 3*len(values)
-
-				if((pd_upper - pd_lower) < (tupleLen + itemLen)): # se não há espaço
+				# If the available space is not enough
+				if((pd_upper - pd_lower) < (tupleLen + itemLen)):
 					file.close()
-					if(PageExist(table_name, offset+1)): # se existe uma página seguinte
-						CreateFrame(table_name, offset+1, values) # tenta inserir na próxima página
-					else: # se não existe uma págica seguinte
-						CreatePage(table_name, offset+1) # cria uma nova página
-						CreateFrame(table_name, offset+1, values) # insere a tupla na nova página
-					return True
+					# Try to insert into the next page (if it exists)
+					if self.__GetPointer(self._Page(table_name, offset+1)):
+						self._CreateFrame(table_name, offset+1, values)
+					# If this is the last page, create a new page and insert there the new tuple
+					elif self._CreatePage(table_name, offset+1):
+						return self._CreateFrame(table_name, offset+1, values)
+					else:
+						return False
 				# gerenciando pd_lower
 				file.seek(4, 0) # posição de início do pd_lower
 				file.write((pd_lower+itemLen).to_bytes(2, 'little')) # atualizando o ponteiro
@@ -335,99 +350,118 @@ class StorageManager(GroupManager):
 			except IOError:
 				return False
 		else:
-			data = {'table_name': table_name, 'offset': offset}
-			result = self._SendMessage(ip, data, self._, True)
+			data = {'table_name': table_name, 'offset': offset, 'values': values}
+			result = self._SendMessage(ip, data, self._CreateFrameMassege, True)
 			return result['data']
 
 	def _DeleteFrame(self, file_name, offset, values):
-		try:
-			file = open(self._Directory+file_name+str(offset)+self._Extension, 'r+b')
-			meta = self._GetMeta(file_name)
-			metaLen = meta[0]
-			meta = meta[1:]
-			# procurando e deletando registros
-			itemLen = 3 + 3*metaLen
-			file.seek(4,0)
-			lower = int.from_bytes(file.read(2),byteorder='little')
-			for itemP in range(12, lower, itemLen):
-				file.seek(itemP, 0)
-				pointer = int.from_bytes(file.read(2), byteorder='little') #ponteiro pra tupla
-				status = int.from_bytes(file.read(1), byteorder='little') #status
-				if(status == 0): # vai para o próximo item se este não estiver sendo usado
-					continue
-				attrLen = []
-				attrType = []
-				# pegando os tamanhos dos campos
-				for i in range(0, metaLen):
-					attrType.append(int.from_bytes(file.read(1), byteorder='little'))
-					attrLen.append(int.from_bytes(file.read(2), byteorder='little'))
-				# pegando a tupla
-				file.seek(pointer, 0)
-				for i in range(0, metaLen):
-					encontrou = False
-					v = 0
-					if(attrType[i] == self._Integer): #lendo int
-						v = int.from_bytes(file.read(attrLen[i]), byteorder='little') #tamanho do campo
-					elif(attrType[i] == self._Char): # char
-						v = file.read(attrLen[i]+1).decode()
-						file.seek(file.tell()+meta[i][1]-attrLen[i], 0)
-					elif(attrType[i] == self._Varchar): # varchar
-						v = file.read(attrLen[i]).decode()
-					for j in range(0, len(values)):
-						if(meta[i][2] == values[j][0]):
-							if(v == values[j][1]):
-								now = file.tell()
-								file.seek(itemP+2, 0)
-								file.write(bytes(1))
-								file.seek(now)
-								encontrou = True
-								break
-					if(encontrou):
-						break
-			# salvando e fechando
-			file.close()
-			return True
-		except IOError:
-			print('Error opening '+file_name+str(offset)+self._Extension)
+		file_name = self._Page(table_name, offset)
+		# Getting an available pointer or stopping if it does not exists
+		pointer = self.__GetPointer(file_name)
+		if pointer is None:
 			return False
+		# Checking if the file need to be created locally
+		ip = self.__GetIPByPointer(pointer)
+		if ip == self._IP:
+			try:
+				file = open(self._Directory+file_name+str(offset)+self._Extension, 'r+b')
+				meta = self._GetMeta(file_name)
+				metaLen = meta[0]
+				meta = meta[1:]
+				# procurando e deletando registros
+				itemLen = 3 + 3*metaLen
+				file.seek(4,0)
+				lower = int.from_bytes(file.read(2),byteorder='little')
+				for itemP in range(12, lower, itemLen):
+					file.seek(itemP, 0)
+					pointer = int.from_bytes(file.read(2), byteorder='little') #ponteiro pra tupla
+					status = int.from_bytes(file.read(1), byteorder='little') #status
+					if(status == 0): # vai para o próximo item se este não estiver sendo usado
+						continue
+					attrLen = []
+					attrType = []
+					# pegando os tamanhos dos campos
+					for i in range(0, metaLen):
+						attrType.append(int.from_bytes(file.read(1), byteorder='little'))
+						attrLen.append(int.from_bytes(file.read(2), byteorder='little'))
+					# pegando a tupla
+					file.seek(pointer, 0)
+					for i in range(0, metaLen):
+						encontrou = False
+						v = 0
+						if(attrType[i] == self._Integer): #lendo int
+							v = int.from_bytes(file.read(attrLen[i]), byteorder='little') #tamanho do campo
+						elif(attrType[i] == self._Char): # char
+							v = file.read(attrLen[i]+1).decode()
+							file.seek(file.tell()+meta[i][1]-attrLen[i], 0)
+						elif(attrType[i] == self._Varchar): # varchar
+							v = file.read(attrLen[i]).decode()
+						for j in range(0, len(values)):
+							if(meta[i][2] == values[j][0]):
+								if(v == values[j][1]):
+									now = file.tell()
+									file.seek(itemP+2, 0)
+									file.write(bytes(1))
+									file.seek(now)
+									encontrou = True
+									break
+						if(encontrou):
+							break
+				# salvando e fechando
+				file.close()
+				return True
+			except IOError:
+				return False
+		else:
+			data = {'table_name': table_name, 'offset': offset, 'values': values}
+			result = self._SendMessage(ip, data, self._DeleteFrameMessage, True)
+			return result['data']
 
 	def _GetFrames(self, file_name,offset):
-		try:
-			file = open(self._Directory+file_name+str(offset)+self._Extension, 'rb')
-			data = []
-			meta = self._GetMeta(file_name)
-			metaLen = int(meta[0])
-			meta = meta[1:]
-			itemLen = 3 + 3*metaLen
-			file.seek(4,0)
-			lower = int.from_bytes(file.read(2),byteorder='little')
-			for itemP in range(12, lower, itemLen):
-				file.seek(itemP, 0)
-				aux = []
-				pointer = int.from_bytes(file.read(2), byteorder='little') #ponteiro pra tupla
-				status = int.from_bytes(file.read(1), byteorder='little') #status
-				if(status == 0): # vai para o próximo item se este não estiver sendo usado
-					continue
-				attrLen = []
-				attrType = []
-				# pegando os tamanhos dos campos
-				for i in range(0, metaLen):
-					attrType.append(int.from_bytes(file.read(1), byteorder='little'))
-					attrLen.append(int.from_bytes(file.read(2), byteorder='little'))
-				# pegando a tupla
-				file.seek(pointer, 0)
-				for i in range(0, metaLen):
-					if(attrType[i] == self._Integer): #lendo int
-						aux.append(int.from_bytes(file.read(attrLen[i]), byteorder='little')) #tamanho do campo
-					elif(attrType[i] == self._Char): # char
-						aux.append(file.read(attrLen[i]).decode())
-						file.seek(file.tell()+meta[i][1]-attrLen[i], 0)
-					elif(attrType[i] == self._Varchar): #varchar
-						aux.append(file.read(attrLen[i]).decode())
-				data.append(aux)
-			data = list(data)
-
-			return data
-		except IOError:
-			print('Error opening '+file_name+str(offset)+self._Extension) #página não existe
+		file_name = self._Page(table_name, offset)
+		# Getting an available pointer or stopping if it does not exists
+		pointer = self.__GetPointer(file_name)
+		if pointer is None:
 			return False
+		# Checking if the file need to be created locally
+		ip = self.__GetIPByPointer(pointer)
+		if ip == self._IP:
+			try:
+				file = open(self._Directory+file_name+str(offset)+self._Extension, 'rb')
+				data = []
+				meta = self._GetMeta(file_name)
+				metaLen = int(meta[0])
+				meta = meta[1:]
+				itemLen = 3 + 3*metaLen
+				file.seek(4,0)
+				lower = int.from_bytes(file.read(2),byteorder='little')
+				for itemP in range(12, lower, itemLen):
+					file.seek(itemP, 0)
+					aux = []
+					pointer = int.from_bytes(file.read(2), byteorder='little') #ponteiro pra tupla
+					status = int.from_bytes(file.read(1), byteorder='little') #status
+					if(status == 0): # vai para o próximo item se este não estiver sendo usado
+						continue
+					attrLen = []
+					attrType = []
+					# pegando os tamanhos dos campos
+					for i in range(0, metaLen):
+						attrType.append(int.from_bytes(file.read(1), byteorder='little'))
+						attrLen.append(int.from_bytes(file.read(2), byteorder='little'))
+					# pegando a tupla
+					file.seek(pointer, 0)
+					for i in range(0, metaLen):
+						if(attrType[i] == self._Integer): #lendo int
+							aux.append(int.from_bytes(file.read(attrLen[i]), byteorder='little')) #tamanho do campo
+						elif(attrType[i] == self._Char): # char
+							aux.append(file.read(attrLen[i]).decode())
+							file.seek(file.tell()+meta[i][1]-attrLen[i], 0)
+						elif(attrType[i] == self._Varchar): #varchar
+							aux.append(file.read(attrLen[i]).decode())
+					data.append(aux)
+				data = list(data)
+
+				return data
+			except IOError:
+				print('Error opening '+file_name+str(offset)+self._Extension) #página não existe
+				return False

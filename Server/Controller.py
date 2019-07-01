@@ -81,29 +81,35 @@ class Controller(StorageManager):
 		# Creating pages
 		if(self._CreateMetaPage(table_name, fields)):
 			self._CreatePage(table_name, 0)
-			return self.__Result('Table created', start_time)
+			return self.__Result('Success', start_time)
 		else:
 			return self.__Result('Table already exists', start_time)
 
 	def __InsertInto(self, stmt):
+		start_time = time.time()
 		args = Validator.InsertInto(stmt)
 		if not args:
 			return self.__Result('Sintax error', start_time)
 
 		table_name = args[0]
 		values = args[1:]
-		if(not self._FileExists(table_name+'0', self._Group)):
-			return self.__Result('Table not found', start_time, [])
+		offset = 0
+		if(self._FileExists(self._Page(table_name, self._MetaData))):
+			if self._CreateFrame(table_name, offset, values):
+				return self.__Result('Success', start_time)
+			else:
+				return self.__Result('Internal error', start_time)
+		else:
+			return self.__Result('Table not found', start_time)
 
-		self._CreateFrame(table_name, 0, values)
-
-	def __DeleteFrom(self, args): # recebe [2, tableName, [[attr, value],[attr, value]]]
+	def __DeleteFrom(self, args):
+		start_time = time.time()
 		args = Validator.CreateTable(stmt)
 		if not args:
 			return self.__Result('Sintax error', start_time)
 
 		offset = 0
-		while(self._FileExists(table_name+str(offset), self._Group)):
+		while(self._FileExists(table_name+str(offset))):
 			self._DeleteFrame(table_name, offset, args[1])
 			offset += 1
 
@@ -115,7 +121,7 @@ class Controller(StorageManager):
 		table_name = args[0]
 		offset = 0
 		values = []
-		while(self._FileExists(table_name+str(offset), self._Group)):
+		while(self._FileExists(table_name+str(offset))):
 			values = values + self._GetFrames(table_name,offset)
 			offset += 1
 		meta = self._GetMeta(table_name)
