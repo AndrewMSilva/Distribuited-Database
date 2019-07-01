@@ -3,22 +3,23 @@ from pyparsing import *
 def CreateTable(stmt, integer, char, varchar):
 	if not stmt.has_alias():
 		None
-	table_name = stmt.get_alias()
-	expected = "CREATE"
+	table_name = None
+	expected = 'CREATE'
 	for token in stmt.tokens:
 		if token.value == " ":
 			continue
 		elif not expected:
 			break
+		elif expected == 'table':
+			table_name = token.value
+			expected = None
 		elif token.value == expected:
-			if expected == "CREATE":
-				expected = "TABLE"
-			elif expected == "TABLE":
-				expected = table_name
-			elif expected == table_name:
-				expected = None
-	
-	if expected:
+			if expected == 'CREATE':
+				expected = 'TABLE'
+			elif expected == 'TABLE':
+				expected = 'table'
+
+	if expected or not table_name:
 		return None
 
 	args = [table_name]
@@ -66,22 +67,23 @@ def CreateTable(stmt, integer, char, varchar):
 def InsertInto(stmt):
 	if not stmt.has_alias():
 		None
-	table_name = stmt.get_alias()
-	expected = "INSERT"
+	table_name = None
+	expected = 'INSERT'
 	for token in stmt.tokens:
 		if token.value == " ":
 			continue
-		elif not expected and 'VALUES' in token.value:
+		elif not expected:
 			break
+		elif expected == 'table':
+			table_name = token.value
+			expected = None
 		elif token.value == expected:
-			if expected == "INSERT":
-				expected = "INTO"
-			elif expected == "INTO":
-				expected = table_name
-			elif expected == table_name:
-				expected = None
-
-	if expected:
+			if expected == 'INSERT':
+				expected = 'INTO'
+			elif expected == 'INTO':
+				expected = 'table'
+	
+	if expected or not table_name:
 		return None
 
 	args = [table_name]
