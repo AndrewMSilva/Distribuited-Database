@@ -75,7 +75,6 @@ class StorageManager(GroupManager):
 		self.__StorageLock.acquire()
 		try:
 			self._Storage[pointer] = file_name
-			print(self._Storage[pointer])
 			self.__SaveStorage()
 			if broadcast:
 				data = {'pointer': pointer, 'file_name': file_name}
