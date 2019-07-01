@@ -20,7 +20,7 @@ class Controller(StorageManager):
 			if message['type'] == self._InviteMessage:
 				old_group = self._UpdateGroup(message)
 			elif message['type'] == self._InsertFileMessage:
-				self._InsertFile(message['data']['pointer'], message['data']['file_name'])
+				self._InsertFile(message['data']['pointer'], message['data']['file_name'], False)
 			elif message['type'] == self._CreateMetaPageMessage:
 				result = self._CreateMetaPage(message['data']['table_name'], message['data']['fields'])
 			elif message['type'] == self._CreatePageMessage:
