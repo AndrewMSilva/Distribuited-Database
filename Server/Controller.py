@@ -23,7 +23,7 @@ class Controller(StorageManager):
 			if message['type'] == self._InviteMessage or message['type'] == self._ExitMessage:
 				old_group = self._UpdateGroup(message['data']['group'])
 				if isinstance(message['data']['storage'], list):
-					self._OverrideStorage()
+					self._OverrideStorage(message['data']['storage'])
 				self._RedistributeFiles(old_group)
 			elif message['type'] == self._InsertFileMessage:
 				self._InsertFile(message['data']['pointer'], message['data']['file_name'], False)
