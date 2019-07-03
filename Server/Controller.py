@@ -41,10 +41,12 @@ class Controller(StorageManager):
 			conn.send(enconded_message)
 
 	def ExitGroup(self):
+		start_time = time.time()
 		old_group = self._ExitGroup()
 		if old_group:
 			self._RedistributeFiles(old_group)
 			self._ClearStorage()
+		return self.__Result(self.__SuccessStatus, start_time)
 
 	# Creating a result
 	def __Result(self, status, start_time, data=[]):
