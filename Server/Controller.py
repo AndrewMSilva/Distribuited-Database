@@ -21,7 +21,9 @@ class Controller(StorageManager):
 			result = self.Execute(query)
 		elif private:
 			if message['type'] == self._InviteMessage or message['type'] == self._ExitMessage:
-				old_group = self._UpdateGroup(message)
+				old_group = self._UpdateGroup(message['data']['group'])
+				if isinstance(message['data']['storage'], list):
+					self._OverrideStorage()
 				self._RedistributeFiles(old_group)
 			elif message['type'] == self._InsertFileMessage:
 				self._InsertFile(message['data']['pointer'], message['data']['file_name'], False)
@@ -65,7 +67,8 @@ class Controller(StorageManager):
 	
 	def Invite(self, ip):
 		start_time = time.time()
-		return self.__Result(super()._Invite(ip), start_time)
+		result = self._Invite(ip, self._Storage)
+		return self.__Result(result, start_time)
 
 	# Executing a query
 	def Execute(self, query):

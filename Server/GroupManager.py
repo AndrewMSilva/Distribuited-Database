@@ -62,7 +62,7 @@ class GroupManager(Service):
 			if ip != self._IP:
 				self._SendMessage(ip, data, type)
 
-	def _Invite(self, ip):
+	def _Invite(self, ip, storage=None):
 		# Verifying the connection is itself
 		if ip == self._IP:
 			return 'Unable to connect to itself'
@@ -70,18 +70,18 @@ class GroupManager(Service):
 		if ip in self._Group:
 			return 'Already connected'
 		# Sending invitation
-		result = self._SendMessage(ip, self._Group, self._InviteMessage)
+		data = {'group': self._Group, 'storage': storage}
+		result = self._SendMessage(ip, data, self._InviteMessage)
 		if result:
 			return 'Invitation sent'
 		else:
 			return 'Unable to connect'
 
-	def _UpdateGroup(self, message):
+	def _UpdateGroup(self, group):
 		# Using mutex to update group
 		result = False
 		self.__GroupLock.acquire()
 		try:
-			group = message['data']
 			# Checking if the groups match
 			if isinstance(group, list) and group != self._Group:
 				# Creating a copy of the group before update it
@@ -95,7 +95,8 @@ class GroupManager(Service):
 				self.__SaveGroup()
 				print('Group updated')
 				# Sending the new group to other devices
-				self._GroupBroadcast(self._Group, self._InviteMessage)
+				data = {'group': self._Group, 'storage': None}
+				self._GroupBroadcast(data, self._InviteMessage)
 			# Checking if the message is an exit message
 			elif isinstance(group, str):
 				self._Group.remove(group)

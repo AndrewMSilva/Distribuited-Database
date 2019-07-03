@@ -87,7 +87,6 @@ class StorageManager(GroupManager):
 		try:
 			self._Storage[pointer] = file_name
 			self.__SaveStorage()
-			print('Storage updated')
 			if broadcast:
 				data = {'pointer': pointer, 'file_name': file_name}
 				self._GroupBroadcast(data, self._InsertFileMessage)
@@ -110,6 +109,7 @@ class StorageManager(GroupManager):
 			storage_json = json.dumps(self._Storage)
 			file.write(storage_json)
 			file.close()
+			print('Storage updated')
 			return True
 		except:
 			return False
@@ -134,7 +134,7 @@ class StorageManager(GroupManager):
 						file.close()
 						data = {'file_name': file_name, 'content': content}
 						if self._SendMessage(current_ip, data, self._RedistributeMessage):
-							remove(self._Directory+file_name)
+							remove(file_name, self._Directory)
 					except:
 						continue
 	
@@ -148,6 +148,10 @@ class StorageManager(GroupManager):
 	
 	def _ClearStorage(self):
 		self._Storage = [None]*self._Addressement
+		self.__SaveStorage()
+	
+	def _OverrideStorage(self, storage):
+		self._Storage = storage.copy()
 		self.__SaveStorage()
 
 	# META PAGE SECTION #
