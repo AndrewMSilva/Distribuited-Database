@@ -153,7 +153,10 @@ class StorageManager(GroupManager):
 		else:
 			data = {'table_name': table_name, 'fields': fields}
 			result = self._SendMessage(ip, data, self._CreateMetaPageMessage, True)
-			return result['data']
+			if isinstance(result, dict):
+				return result['data']
+			else:
+				result
 	
 	def _GetMeta(self, table_name):
 		file_name = self._Page(table_name, self._MetaData)
@@ -190,7 +193,10 @@ class StorageManager(GroupManager):
 		else:
 			data = {'table_name': table_name}
 			result = self._SendMessage(ip, data, self._GetMetaMessage, True)
-			return result['data']
+			if isinstance(result, dict):
+				return result['data']
+			else:
+				result
 
 	# PAGE SECTION #
 
@@ -232,11 +238,13 @@ class StorageManager(GroupManager):
 		else:
 			data = {'table_name': table_name, 'offset': offset}
 			result = self._SendMessage(ip, data, self._CreatePageMessage, True)
-			return result['data']
+			if isinstance(result, dict):
+				return result['data']
+			else:
+				result
 
 
 	def _CreateFrame(self, table_name, offset, values):
-		print(values)
 		file_name = self._Page(table_name, offset)
 		# Getting an available pointer or stopping if it does not exists
 		pointer = self.__GetPointer(file_name)
@@ -351,7 +359,10 @@ class StorageManager(GroupManager):
 		else:
 			data = {'table_name': table_name, 'offset': offset, 'values': values}
 			result = self._SendMessage(ip, data, self._CreateFrameMassege, True)
-			return result['data']
+			if isinstance(result, dict):
+				return result['data']
+			else:
+				result
 
 	def _DeleteFrame(self, file_name, offset, values):
 		file_name = self._Page(table_name, offset)
@@ -414,7 +425,10 @@ class StorageManager(GroupManager):
 		else:
 			data = {'table_name': table_name, 'offset': offset, 'values': values}
 			result = self._SendMessage(ip, data, self._DeleteFrameMessage, True)
-			return result['data']
+			if isinstance(result, dict):
+				return result['data']
+			else:
+				result
 
 	def _GetFrames(self, file_name,offset):
 		file_name = self._Page(table_name, offset)
