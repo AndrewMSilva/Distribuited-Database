@@ -55,7 +55,6 @@ class StorageManager(GroupManager):
 		backward = False
 		initial_pointer = self.__PearsonHash(file_name)
 		pointer = initial_pointer
-		print(file_name)
 		while True:
 			if pointer >= self._Addressement:
 				backward = True
@@ -157,7 +156,7 @@ class StorageManager(GroupManager):
 			return result['data']
 	
 	def _GetMeta(self, table_name):
-		file_name = self._Page(table_name, self._GetMeta)
+		file_name = self._Page(table_name, self._MetaData)
 		# Getting an available pointer or stopping if it does not exists
 		pointer = self.__GetPointer(file_name)
 		print(pointer)
@@ -237,6 +236,7 @@ class StorageManager(GroupManager):
 
 
 	def _CreateFrame(self, table_name, offset, values):
+		print(values)
 		file_name = self._Page(table_name, offset)
 		# Getting an available pointer or stopping if it does not exists
 		pointer = self.__GetPointer(file_name)
@@ -255,9 +255,8 @@ class StorageManager(GroupManager):
 				metaLen = meta[0]
 				meta = meta[1:]
 				if(metaLen != len(values)):
-					print('Table '+table_name+' have '+str(metaLen)+' attributes')
 					file.close()
-					return False
+					return table_name+' has '+str(metaLen)+' attributes, but received '+str(len(values))
 				for i in range(0,metaLen):
 					if(meta[i][0] == self._Integer and isinstance(values[i], int)): # se ambos int
 						tupleLen += meta[i][1]

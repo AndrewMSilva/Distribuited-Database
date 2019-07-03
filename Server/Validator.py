@@ -91,7 +91,11 @@ def InsertInto(stmt):
 	if 'VALUES' in attr:
 		attr = attr.replace('VALUES', '')
 		try:
-			args += list(eval(attr))
+			value = eval(attr)
+			if isinstance(value, tuple):
+				args += list(value)
+			else:
+				args += [value]
 			return args
 		except:
 			return None
