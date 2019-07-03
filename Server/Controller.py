@@ -66,12 +66,6 @@ class Controller(StorageManager):
 			return self.__CreateTable(stmt)
 		elif function == "INSERT":
 			return self.__InsertInto(stmt)
-		elif function == "DELETE":
-			return self.__DeleteFrom(stmt)
-		elif function == "SELECT":
-			for i in range(0, len(stmt.tokens)):
-				print(i, stmt.tokens[i])
-			#Select()
 		else:
 			return self.__Result('Command not found', time.time())
 	
@@ -109,37 +103,3 @@ class Controller(StorageManager):
 				return self.__Result(self.__SuccessStatus, start_time)
 		else:
 			return self.__Result(self.__ErrorStatus, start_time, 'Table not found')
-
-	def __DeleteFrom(self, args):
-		start_time = time.time()
-		args = Validator.CreateTable(stmt)
-		if not args:
-			return self.__Result(self.__ErrorStatus, start_time, 'Sintax error')
-
-		offset = 0
-		while(self._FileExists(table_name+str(offset))):
-			self._DeleteFrame(table_name, offset, args[1])
-			offset += 1
-
-	def __Select(self, args):
-		args = Validator.CreateTable(stmt)
-		if not args:
-			return self.__Result(self.__ErrorStatus, start_time, 'Sintax error')
-
-		table_name = args[0]
-		offset = 0
-		values = []
-		while(self._FileExists(table_name+str(offset))):
-			values = values + self._GetFrames(table_name,offset)
-			offset += 1
-		meta = self._GetMeta(table_name)
-		aux = '\n| # | '
-		for a in range(1, len(meta)):
-			aux = aux + meta[a][2] + ' | '
-		print(aux)
-		for i in range(0,len(values)):
-			aux = '| '+str(i+1)
-			for j in range(0,len(values[i])):
-				aux = aux +' | '+ str(values[i][j])
-			print(aux+' |')
-		return
