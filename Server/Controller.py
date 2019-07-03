@@ -69,11 +69,7 @@ class Controller(StorageManager):
 	def Invite(self, ip):
 		start_time = time.time()
 		result = self._Invite(ip, self._Storage)
-		if isinstance(result, list):
-			self._RedistributeFiles(result)
-			return self.__Result(result, start_time)
-		else:
-			return self.__Result(self.__ErrorStatus, start_time, result)
+		return self.__Result(result, start_time)
 
 	# Executing a query
 	def Execute(self, query):

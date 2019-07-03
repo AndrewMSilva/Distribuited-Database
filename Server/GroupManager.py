@@ -37,6 +37,7 @@ class GroupManager(Service):
 			group_json = json.dumps(self._Group)
 			file.write(group_json)
 			file.close()
+			print('Group updated')
 			return True
 		except:
 			return False
@@ -93,7 +94,6 @@ class GroupManager(Service):
 				self._Group = sorted(self._Group)
 				# Updating group
 				self.__SaveGroup()
-				print('Group updated')
 				# Sending the new group to other devices
 				data = {'group': self._Group, 'storage': None}
 				self._GroupBroadcast(data, self._InviteMessage)
