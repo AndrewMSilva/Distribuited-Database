@@ -22,9 +22,10 @@ class Controller(StorageManager):
 		elif private:
 			if message['type'] == self._InviteMessage or message['type'] == self._ExitMessage:
 				old_group = self._UpdateGroup(message['data']['group'])
-				if isinstance(message['data']['storage'], list):
-					self._OverrideStorage(message['data']['storage'])
-				self._RedistributeFiles(old_group)
+				if old_group:
+					if isinstance(message['data']['storage'], list):
+						self._OverrideStorage(message['data']['storage'])
+					self._RedistributeFiles(old_group)
 			elif message['type'] == self._InsertFileMessage:
 				self._InsertFile(message['data']['pointer'], message['data']['file_name'], False)
 			elif message['type'] == self._CreateMetaPageMessage:
@@ -68,7 +69,10 @@ class Controller(StorageManager):
 	def Invite(self, ip):
 		start_time = time.time()
 		result = self._Invite(ip, self._Storage)
-		return self.__Result(result, start_time)
+		if result:
+			self._RedistributeFiles(result)
+			return self.__Result(result, start_time)
+		else:
 
 	# Executing a query
 	def Execute(self, query):
@@ -81,7 +85,7 @@ class Controller(StorageManager):
 		elif function == "INSERT":
 			return self.__InsertInto(stmt)
 		else:
-			return self.__Result('Command not found', time.time())
+			return self.__Result(self.__ErrorStatus, time.time(), 'Command not found')
 	
 	def __CreateTable(self, stmt):
 		start_time = time.time()
