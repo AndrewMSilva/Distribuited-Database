@@ -103,7 +103,7 @@ class Controller(StorageManager):
 			result = self._CreateFrame(table_name, offset, values)
 			if isinstance(result, str):
 				return self.__Result(self.__ErrorStatus, start_time, result)
-			elif result:
+			elif not result:
 				return self.__Result(self.__ErrorStatus, start_time, 'Internal error')
 			else:
 				return self.__Result(self.__SuccessStatus, start_time)
