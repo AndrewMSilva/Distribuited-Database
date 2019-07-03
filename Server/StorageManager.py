@@ -162,7 +162,6 @@ class StorageManager(GroupManager):
 		file_name = self._Page(table_name, self._MetaData)
 		# Getting an available pointer or stopping if it does not exists
 		pointer = self.__GetPointer(file_name)
-		print(pointer)
 		if pointer is None:
 			return False
 		# Checking if the file need to be created locally
@@ -274,22 +273,19 @@ class StorageManager(GroupManager):
 						elif(len(values[i]) <= meta[i][1]):
 							tupleLen += meta[i][1]
 						else:
-							print('The attribute is char('+str(meta[i][1])+'), but has received '+str(len(values[i]))+' characteres') # a entrada e o tipo não combinam
 							file.close()
-							return False
+							return 'Expected a char('+str(meta[i][1])+'), but received '+str(len(values[i]))+' characteres'
 					elif(meta[i][0] == self._Varchar and isinstance(values[i], str)): # se varchar e str
 						if(len(values[i]) > self._MaxStringLen):
 							tupleLen += 4
 						elif(len(values[i]) <= meta[i][1]):
 							tupleLen += len(values[i])
 						else:
-							print('The attribute is varchar('+str(meta[i][1])+'), but has received '+str(len(values[i]))+' characteres') # a entrada e o tipo não combinam
 							file.close()
-							return False
+							return 'Expected a varchar('+str(meta[i][1])+'), but has received '+str(len(values[i]))+' characteres'
 					else:
-						print('Entry and type do not match: check the sequence') # a entrada e o tipo não combinam
 						file.close()
-						return False
+						return 'Entry and type are not matching'
 				# Getting page available space
 				# pd_lower: where insert a new item
 				file.seek(4, 0)
