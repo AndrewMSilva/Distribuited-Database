@@ -20,8 +20,9 @@ class Controller(StorageManager):
 		if message['type'] == self._QueryMessage:
 			result = self.Execute(query)
 		elif private:
-			if message['type'] == self._InviteMessage:
+			if message['type'] == self._InviteMessage or message['type'] == self._ExitMessage:
 				old_group = self._UpdateGroup(message)
+				self._RedistributeFiles(old_group)
 			elif message['type'] == self._InsertFileMessage:
 				self._InsertFile(message['data']['pointer'], message['data']['file_name'], False)
 			elif message['type'] == self._CreateMetaPageMessage:
@@ -32,10 +33,18 @@ class Controller(StorageManager):
 				result = self._GetMeta(message['data']['table_name'])
 			elif message['type'] == self._CreateFrameMassege:
 				result = self._CreateFrame(message['data']['table_name'], message['data']['offset'], message['data']['values'])
+			elif message['type'] == self._RedistributeMessage:
+				self._SaveFile(message['data']['file_name'], message['data']['content'])
 		# Sending result
 		if not result is None:
 			enconded_message = self._EncodeMessage(result, result, True)
 			conn.send(enconded_message)
+
+	def ExitGroup(self):
+		old_group = self._ExitGroup()
+		if old_group:
+			self._RedistributeFiles(old_group)
+			self._ClearStorage()
 
 	# Creating a result
 	def __Result(self, status, start_time, data=[]):

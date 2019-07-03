@@ -2,6 +2,7 @@ from GroupManager import GroupManager
 from threading import Lock
 import random
 import json
+from os import remove
 
 class StorageManager(GroupManager):
 	# Files settings
@@ -31,6 +32,7 @@ class StorageManager(GroupManager):
 	_GetMetaMessage 	   = 'get_meta'
 	_CreatePageMessage     = 'create_page'
 	_CreateFrameMassege	   = 'create_frame'
+	_RedistributeMessage   = 'redistribute'
 
 	# DHT SECTION #
 	def __PearsonHash(self, file_name):
@@ -41,9 +43,11 @@ class StorageManager(GroupManager):
 			h[i+1] = self.__T[h[i] ^ ord(file_name[i])]
 		return h[n]
 	
-	def __GetIPByPointer(self, pointer):
-		local_space = int(self._Addressement/len(self._Group))
-		for ip in self._Group:
+	def __GetIPByPointer(self, pointer, group=None):
+		if group is None:
+			group = self._Group
+		local_space = int(self._Addressement/len(group))
+		for ip in group:
 			if pointer < local_space:
 				break
 			else:
@@ -116,6 +120,35 @@ class StorageManager(GroupManager):
 
 	def _Page(self, prefix, sufix='', extension=_Extension):
 		return prefix+str(sufix)+extension
+	
+	def _RedistributeFiles(self, old_group):
+		for pointer in range(0, self._Addressement):
+			file_name = self._Storage[pointer]
+			if isinstance(file_name, str):
+				old_ip = self.__GetIPByPointer(pointer, old_group)
+				current_ip = self.__GetIPByPointer(pointer, old_group)
+				if old_ip != current_ip and old_ip == self._IP:
+					try:
+						file = open(self._Directory+file_name, 'rb')
+						content = file.read(self._Length).decode()
+						file.close()
+						data = {'file_name': file_name, 'content': content}
+						if self._SendMessage(current_ip, data, self._RedistributeMessage):
+							remove(self._Directory+file_name)
+					except:
+						continue
+	
+	def _SaveFile(self, file_name, content):
+		try:
+			file = open(self._Directory+file_name, 'wb')
+			file.write(content.encode())
+			file.close()
+		except IOError:
+			return False
+	
+	def _ClearStorage(self):
+		self._Storage = [None]*self._Addressement
+		self.__SaveStorage()
 
 	# META PAGE SECTION #
 

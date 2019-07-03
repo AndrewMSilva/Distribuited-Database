@@ -8,6 +8,7 @@ class GroupManager(Service):
 	__GroupLock = Lock()
 	# Message types
 	_InviteMessage  = 'invite'
+	_ExitMessage	= 'exit'
 	# Configs settings
 	_ConfigsDirectory = './Configs/'
 	__GroupConfigs	   = 'Group.config'
@@ -82,7 +83,7 @@ class GroupManager(Service):
 		try:
 			group = message['data']
 			# Checking if the groups match
-			if group != self._Group:
+			if isinstance(group, list) and group != self._Group:
 				# Creating a copy of the group before update it
 				result = self._Group.copy()
 				# Updateing group
@@ -95,9 +96,28 @@ class GroupManager(Service):
 				print('Group updated')
 				# Sending the new group to other devices
 				self._GroupBroadcast(self._Group, self._InviteMessage)
+			# Checking if the message is an exit message
+			elif isinstance(group, str):
+				self._Group.remove(group)
+				# Updating group
+				self.__SaveGroup()
+				print('Group updated')
 		except:
 			result = False
 		finally:
 			self.__GroupLock.release()
 			return result
-	
+
+	def _ExitGroup(self):
+		result = False
+		self.__GroupLock.acquire()
+		try:
+			old_group = self._Group.copy()
+			self._Group = [self._IP]
+			self.__SaveGroup()
+			self._GroupBroadcast(self._IP, self._ExitMessage)
+			result = old_group
+		finally:
+			self.__GroupLock.release()
+			return result
+		

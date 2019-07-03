@@ -14,7 +14,9 @@ while server.IsRunning():
 		splited = None
 	if query.lower() == 'close':
 		server.Close()
-	elif splited and splited[0] == 'invite' and len(splited) == 2:
+	elif splited and len(splited) == 2 and splited[0] == 'invite':
 		server.ShowResult(server.Invite(splited[1]))
+	elif splited and len(splited) == 2 and splited[0] == 'exit' and splited[1] == 'group':
+		server.ShowResult(server.ExitGroup())
 	elif query != '':
 		server.ShowResult(server.Execute(query))
