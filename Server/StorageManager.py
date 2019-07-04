@@ -133,7 +133,7 @@ class StorageManager(GroupManager):
 						file = open(self._Directory+file_name, 'rb')
 						content = base64.b64encode(file.read())
 						file.close()
-						data = {'file_name': file_name, 'content': content}
+						data = {'file_name': file_name, 'content': content.decode('latin1')}
 						if self._SendMessage(current_ip, data, self._RedistributeMessage):
 							remove(self._Directory+file_name)
 					except IOError:
@@ -143,7 +143,7 @@ class StorageManager(GroupManager):
 	
 	def _SaveFile(self, file_name, content):
 		try:
-			content = base64.b64decode(content)
+			content = base64.b64decode(content.encode('latin1'))
 			file = open(self._Directory+file_name, 'wb')
 			file.write(content.encode())
 			file.close()
