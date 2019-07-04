@@ -2,6 +2,7 @@ from GroupManager import GroupManager
 from threading import Lock
 import random
 import json
+import base64
 from os import remove
 
 class StorageManager(GroupManager):
@@ -126,24 +127,27 @@ class StorageManager(GroupManager):
 			file_name = self._Storage[pointer]
 			if isinstance(file_name, str):
 				old_ip = self.__GetIPByPointer(pointer, old_group)
-				current_ip = self.__GetIPByPointer(pointer, old_group)
+				current_ip = self.__GetIPByPointer(pointer)
 				if old_ip != current_ip and old_ip == self._IP:
 					try:
 						file = open(self._Directory+file_name, 'rb')
-						content = file.read(self._Length).decode()
+						content = base64.b64encode(file.read())
 						file.close()
 						data = {'file_name': file_name, 'content': content}
 						if self._SendMessage(current_ip, data, self._RedistributeMessage):
-							remove(file_name, self._Directory)
+							remove(self._Directory+file_name)
+					except IOError:
+						continue
 					except Exception as e:
 						print('Error redistributing file:', e)
-						continue
 	
 	def _SaveFile(self, file_name, content):
 		try:
+			content = base64.b64decode(content)
 			file = open(self._Directory+file_name, 'wb')
 			file.write(content.encode())
 			file.close()
+			return True
 		except IOError:
 			return False
 	
