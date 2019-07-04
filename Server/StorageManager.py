@@ -135,7 +135,8 @@ class StorageManager(GroupManager):
 						data = {'file_name': file_name, 'content': content}
 						if self._SendMessage(current_ip, data, self._RedistributeMessage):
 							remove(file_name, self._Directory)
-					except:
+					except Exception as e:
+						print('Error redistributing file:', e)
 						continue
 	
 	def _SaveFile(self, file_name, content):
