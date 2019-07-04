@@ -85,13 +85,13 @@ class Service(object):
 			message['key'] = self.__PrivateKey
 		else:
 			message['key'] = self.__PublicKey
-		return pickle.dumps(message).encode('latin1')
+		return pickle.dumps(message)
 	
 	# Receiving and authenticating a message
 	def _Receive(self, conn):
 		try:
 			enconded_message = conn.recv(self.__BufferLength)
-			message = pickle.loads(enconded_message.decode('latin1'))
+			message = pickle.loads(enconded_message)
 			if 'key' in message and 'type' in message and 'time_stamp' in message and 'data' in message and (message['key'] == self.__PrivateKey or message['key'] == self.__PublicKey):
 				return message
 			else:

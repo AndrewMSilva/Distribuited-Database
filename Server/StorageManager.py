@@ -144,7 +144,7 @@ class StorageManager(GroupManager):
 		try:
 			content = base64.b64decode(content)
 			file = open(self._Directory+file_name, 'wb')
-			file.write(content.encode())
+			file.write(content)
 			file.close()
 			return True
 		except IOError:
