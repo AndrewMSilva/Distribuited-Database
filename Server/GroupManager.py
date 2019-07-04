@@ -1,6 +1,6 @@
 from threading import Lock
 from Service import Service
-import json
+import pickle
 
 class GroupManager(Service):
 	# Group settings
@@ -20,10 +20,10 @@ class GroupManager(Service):
 	
 	def __GetGroup(self):
 		try:
-			file = open(self._ConfigsDirectory+self.__GroupConfigs, 'r')
-			group_json = file.read()
+			file = open(self._ConfigsDirectory+self.__GroupConfigs, 'rb')
+			group = pickle.load(file)
 			file.close()
-			self._Group = json.loads(group_json)
+			self._Group = group.copy()
 			if not self._IP in self._Group:
 				print('Local IP not found in', self.__GroupConfigs)
 				return False
@@ -33,9 +33,8 @@ class GroupManager(Service):
 
 	def __SaveGroup(self):
 		try:
-			file = open(self._ConfigsDirectory+self.__GroupConfigs, 'w')
-			group_json = json.dumps(self._Group)
-			file.write(group_json)
+			file = open(self._ConfigsDirectory+self.__GroupConfigs, 'wb')
+			pickle.dump(self._Group, file)
 			file.close()
 			print('Group updated')
 			return True

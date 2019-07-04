@@ -1,7 +1,7 @@
 from GroupManager import GroupManager
 from threading import Lock
 import random
-import json
+import pickle
 import base64
 from os import remove
 
@@ -96,19 +96,18 @@ class StorageManager(GroupManager):
 	
 	def __GetStorage(self):
 		try:
-			file = open(self._ConfigsDirectory+self.__StorageConfigs, 'r')
-			storage_json = file.read()
+			file = open(self._ConfigsDirectory+self.__StorageConfigs, 'rb')
+			storage = pickle.load(file)
 			file.close()
-			self._Storage = json.loads(storage_json)
+			self._Storage = storage.copy()
 			return True
 		except:
 			return False
 
 	def __SaveStorage(self):
 		try:
-			file = open(self._ConfigsDirectory+self.__StorageConfigs, 'w')
-			storage_json = json.dumps(self._Storage)
-			file.write(storage_json)
+			file = open(self._ConfigsDirectory+self.__StorageConfigs, 'wb')
+			pickle.dump(self._Storage, file)
 			file.close()
 			print('Storage updated')
 			return True
@@ -133,7 +132,7 @@ class StorageManager(GroupManager):
 						file = open(self._Directory+file_name, 'rb')
 						content = base64.b64encode(file.read())
 						file.close()
-						data = {'file_name': file_name, 'content': content.decode('latin1')}
+						data = {'file_name': file_name, 'content': content}
 						if self._SendMessage(current_ip, data, self._RedistributeMessage):
 							remove(self._Directory+file_name)
 					except IOError:
@@ -143,7 +142,7 @@ class StorageManager(GroupManager):
 	
 	def _SaveFile(self, file_name, content):
 		try:
-			content = base64.b64decode(content.encode('latin1'))
+			content = base64.b64decode(content)
 			file = open(self._Directory+file_name, 'wb')
 			file.write(content.encode())
 			file.close()

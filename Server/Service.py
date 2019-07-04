@@ -2,7 +2,7 @@ from socket import socket, AF_INET, SOCK_STREAM, SOCK_DGRAM
 from threading import Thread
 import hashlib
 import time
-import json
+import pickle
 
 class Service(object):
 	# Host settings
@@ -85,13 +85,13 @@ class Service(object):
 			message['key'] = self.__PrivateKey
 		else:
 			message['key'] = self.__PublicKey
-		return json.dumps(message).encode('latin1')
+		return pickle.dumps(message).encode('latin1')
 	
 	# Receiving and authenticating a message
 	def _Receive(self, conn):
 		try:
 			enconded_message = conn.recv(self.__BufferLength)
-			message = json.loads(enconded_message.decode('latin1'))
+			message = pickle.loads(enconded_message.decode('latin1'))
 			if 'key' in message and 'type' in message and 'time_stamp' in message and 'data' in message and (message['key'] == self.__PrivateKey or message['key'] == self.__PublicKey):
 				return message
 			else:
