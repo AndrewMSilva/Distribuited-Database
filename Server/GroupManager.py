@@ -118,7 +118,12 @@ class GroupManager(Service):
 	
 	def _RemoveFromGroup(self, ip):
 		if ip in self._Group:
-			self._Group.remove(ip)
-			self.__SaveGroup()
-			print('Group updated')
+			self.__GroupLock.acquire()
+			try:
+				self._Group.remove(ip)
+				self.__SaveGroup()
+				print('Group updated')
+			finally:
+				self.__GroupLock.release()
+				return result
 		
