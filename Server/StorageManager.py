@@ -144,8 +144,6 @@ class StorageManager(GroupManager):
 					except Exception as e:
 						print('Error redistributing '+file_name+':', e)
 	
-	def 
-	
 	def _SaveFile(self, file_name, content):
 		try:
 			content = base64.b64decode(content)
