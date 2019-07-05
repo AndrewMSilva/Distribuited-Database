@@ -130,15 +130,15 @@ class StorageManager(GroupManager):
 				if old_ip != current_ip and old_ip == self._IP:
 					try:
 						file = open(self._Directory+file_name, 'rb')
-						content = base64.b64encode(file.read())
+						content = base64.b64encode(file.read(self._Length))
 						file.close()
 						data = {'file_name': file_name, 'content': content}
-						if self._SendMessage(current_ip, data, self._RedistributeMessage):
+						if self._SendMessage(current_ip, data, self._RedistributeMessage, True):
 							remove(self._Directory+file_name)
 					except IOError:
 						continue
 					except Exception as e:
-						print('Error redistributing file:', e)
+						print('Error redistributing '+file_name+':', e)
 	
 	def _SaveFile(self, file_name, content):
 		try:

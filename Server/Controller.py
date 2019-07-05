@@ -37,7 +37,7 @@ class Controller(StorageManager):
 			elif message['type'] == self._CreateFrameMassege:
 				result = self._CreateFrame(message['data']['table_name'], message['data']['offset'], message['data']['values'])
 			elif message['type'] == self._RedistributeMessage:
-				self._SaveFile(message['data']['file_name'], message['data']['content'])
+				result = self._SaveFile(message['data']['file_name'], message['data']['content'])
 		# Sending result
 		if not result is None:
 			enconded_message = self._EncodeMessage(result, result, True)
