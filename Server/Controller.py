@@ -20,12 +20,14 @@ class Controller(StorageManager):
 		if message['type'] == self._QueryMessage:
 			result = self.Execute(query)
 		elif private:
-			if message['type'] == self._InviteMessage or message['type'] == self._ExitMessage:
+			if message['type'] == self._InviteMessage:
 				old_group = self._UpdateGroup(message['data']['group'])
 				if old_group:
 					if isinstance(message['data']['storage'], list):
 						self._OverrideStorage(message['data']['storage'])
 					self._RedistributeFiles(old_group)
+			elif message['type'] == self._ExitMessage:
+				self._RemoveFromGroup(message['data'])
 			elif message['type'] == self._InsertFileMessage:
 				self._InsertFile(message['data']['pointer'], message['data']['file_name'], False)
 			elif message['type'] == self._CreateMetaPageMessage:
@@ -47,7 +49,7 @@ class Controller(StorageManager):
 		start_time = time.time()
 		old_group = self._ExitGroup()
 		if old_group:
-			self._RedistributeFiles(old_group)
+			self._RedistributeFiles(old_group, True)
 			self._ClearStorage()
 		return self.__Result(self.__SuccessStatus, start_time)
 

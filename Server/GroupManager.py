@@ -93,15 +93,10 @@ class GroupManager(Service):
 				self._Group = sorted(self._Group)
 				# Updating group
 				self.__SaveGroup()
+				print('Group updated')
 				# Sending the new group to other devices
 				data = {'group': self._Group, 'storage': None}
 				self._GroupBroadcast(data, self._InviteMessage)
-			# Checking if the message is an exit message
-			elif isinstance(group, str):
-				self._Group.remove(group)
-				# Updating group
-				self.__SaveGroup()
-				print('Group updated')
 		except:
 			result = False
 		finally:
@@ -115,11 +110,15 @@ class GroupManager(Service):
 			old_group = self._Group.copy()
 			self._Group = [self._IP]
 			self.__SaveGroup()
-			data = {'group': self._IP, 'storage': None}
-			self._GroupBroadcast(data, self._ExitMessage)
-			old_group.remove(self._IP)
+			self._GroupBroadcast(self._IP, self._ExitMessage)
 			result = old_group
 		finally:
 			self.__GroupLock.release()
 			return result
+	
+	def _RemoveFromGroup(self, ip):
+		if ip in self._Group:
+			self._Group.remove(ip)
+			self.__SaveGroup()
+			print('Group updated')
 		

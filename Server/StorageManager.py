@@ -121,13 +121,14 @@ class StorageManager(GroupManager):
 	def _Page(self, prefix, sufix='', extension=_Extension):
 		return prefix+str(sufix)+extension
 	
-	def _RedistributeFiles(self, old_group):
+	def _RedistributeFiles(self, old_group, exiting=False):
 		for pointer in range(0, self._Addressement):
 			file_name = self._Storage[pointer]
 			if isinstance(file_name, str):
 				old_ip = self.__GetIPByPointer(pointer, old_group)
 				current_ip = self.__GetIPByPointer(pointer)
-				if old_ip != current_ip and old_ip == self._IP:
+				print(file_name, old_ip, current_ip)
+				if old_ip == self._IP and (old_ip != current_ip or exiting):
 					try:
 						file = open(self._Directory+file_name, 'rb')
 						content = base64.b64encode(file.read(self._Length))
