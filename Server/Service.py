@@ -16,7 +16,7 @@ class Service(object):
 	__PrivateKey = None
 	__PublicKey  = None
 	# Message settings
-	__BufferLength = 10*1024
+	__BufferLength = 12*1024
 
 	def __init__(self, private_key, public_key):
 		# Hashing keys

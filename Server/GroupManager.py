@@ -115,7 +115,9 @@ class GroupManager(Service):
 			old_group = self._Group.copy()
 			self._Group = [self._IP]
 			self.__SaveGroup()
-			self._GroupBroadcast(self._IP, self._ExitMessage)
+			data = {'group': self._IP, 'storage': None}
+			self._GroupBroadcast(data, self._ExitMessage)
+			old_group.remove(self._IP)
 			result = old_group
 		finally:
 			self.__GroupLock.release()
