@@ -6,7 +6,7 @@ import time
 class Controller(StorageManager):
 	_QueryMessage = 'query'
 	# Result status
-	__ErrorStatus   = 'Error'
+	__ErrorStatus   = 'Failure'
 	__SuccessStatus = 'Success'
 
 	def Start(self):
@@ -27,7 +27,8 @@ class Controller(StorageManager):
 						self._MergeStorage(message['data']['storage'])
 					self._RedistributeFiles(old_group)
 			elif message['type'] == self._ExitMessage:
-				self._RemoveFromGroup(message['data'])
+				old_group = self._RemoveFromGroup(message['data'])
+				self._RedistributeFiles(old_group)
 			elif message['type'] == self._InsertFileMessage:
 				self._InsertFile(message['data']['pointer'], message['data']['file_name'], False)
 			elif message['type'] == self._CreateMetaPageMessage:
@@ -53,12 +54,9 @@ class Controller(StorageManager):
 	
 	# Showing a result
 	def ShowResult(self, result):
-		print()
-		print('Status:', result['status'])
-		print('Duration:', result['duration'])
+		print(result['status'], 'in', result['duration'], 'seconds')
 		for element in result['data']:
 			print(element)
-		print()
 	
 	def Invite(self, ip):
 		start_time = time.time()

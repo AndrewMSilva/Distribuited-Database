@@ -93,7 +93,6 @@ class GroupManager(Service):
 				self._Group = sorted(self._Group)
 				# Updating group
 				self.__SaveGroup()
-				print('Group updated')
 				# Sending the new group to other devices
 				data = {'group': self._Group, 'storage': storage}
 				self._GroupBroadcast(data, self._InviteMessage)
@@ -117,13 +116,14 @@ class GroupManager(Service):
 			return result
 	
 	def _RemoveFromGroup(self, ip):
-		if ip in self._Group:
-			self.__GroupLock.acquire()
-			try:
-				self._Group.remove(ip)
-				self.__SaveGroup()
-				print('Group updated')
-			finally:
-				self.__GroupLock.release()
-				return result
+		result = self._Group.copy()
+		self.__GroupLock.acquire()
+		try:
+			self._Group.remove(ip)
+			self.__SaveGroup()
+		except:
+			result = None
+		finally:
+			self.__GroupLock.release()
+			return result
 		
