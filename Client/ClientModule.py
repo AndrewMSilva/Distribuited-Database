@@ -13,15 +13,14 @@ class ClientModule():
 	__Connections = {}
 	__Timeout     = 0.1
 	# Authentication settings
-	__Key = None
+	__Token = None
 	# Message settings
 	__BufferLength = 1024
 	__QueryType    = 0
 	__ResponseType = 1
 
-	def __init__(self, ip, key):
-		# Hashing keys
-		self.__Key = hashlib.sha1(key.encode('latin1')).hexdigest()
+	def __init__(self, ip, token):
+		self.__Token = hashlib.sha1(token.encode('latin1')).hexdigest()
 		self.__Socket = socket(AF_INET, SOCK_STREAM)
 		try:
 			self.__Socket.connect((ip, self.__Port))
@@ -34,7 +33,7 @@ class ClientModule():
 	
 	# Enconding a message
 	def __EncodeMessage(self, data, type=__QueryType, private=False):
-		message = {'type': type,'time_stamp': time.time(), 'key': self.__Key, 'data': data}
+		message = {'type': type,'time_stamp': time.time(), 'token': self.__Token, 'data': data}
 		return json.dumps(message.decode('latin1'))
 	
 	def Execute(self, query):

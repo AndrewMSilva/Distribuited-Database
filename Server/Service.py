@@ -13,15 +13,15 @@ class Service(object):
 	__Socket  = None
 	_Timeout  = 1
 	# Authentication settings
-	__PrivateKey = None
-	__PublicKey  = None
+	__ServerToken = None
+	__ClientToken = None
 	# Message settings
 	__BufferLength = 8*1024
 
-	def __init__(self, private_key, public_key):
-		# Hashing keys
-		self.__PrivateKey = hashlib.sha1(private_key.encode('latin1')).hexdigest()
-		self.__PublicKey = hashlib.sha1(public_key.encode('latin1')).hexdigest()
+	def __init__(self, server_token, client_token):
+		# Hashing tokens
+		self.__ServerToken = hashlib.sha1(server_token.encode('latin1')).hexdigest()
+		self.__ClientToken = hashlib.sha1(client_token.encode('latin1')).hexdigest()
 		super().__init__()
 	
 	def _NewSocket(self):
@@ -73,7 +73,7 @@ class Service(object):
 			elif message == TimeoutError:
 				continue
 			waiting_message = False
-			private = message['key'] == self.__PrivateKey
+			private = message['token'] == self.__ServerToken
 			self.HandleMessage(conn, message, private)
 
 		conn.close()
@@ -82,9 +82,9 @@ class Service(object):
 	def _EncodeMessage(self, data, type, private=False):
 		message = {'type': type, 'time_stamp': time.time(), 'data': data}
 		if private:
-			message['key'] = self.__PrivateKey
+			message['token'] = self.__ServerToken
 		else:
-			message['key'] = self.__PublicKey
+			message['token'] = self.__ClientToken
 		return pickle.dumps(message)
 	
 	# Receiving and authenticating a message
@@ -105,7 +105,7 @@ class Service(object):
 					except:
 						continue
 
-			if isinstance(message, dict) and 'key' in message and 'type' in message and 'time_stamp' in message and 'data' in message and (message['key'] == self.__PrivateKey or message['key'] == self.__PublicKey):
+			if isinstance(message, dict) and 'token' in message and 'type' in message and 'time_stamp' in message and 'data' in message and (message['token'] == self.__ServerToken or message['token'] == self.__ClientToken):
 				return message
 			else:
 				return None
