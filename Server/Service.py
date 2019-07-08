@@ -92,20 +92,26 @@ class Service(object):
 		try:
 			receiving = True
 			enconded_message = b''
+			message = None
 			while receiving:
 				packet = conn.recv(self.__BufferLength)
 				if not packet:
 					receiving = False
 				else:
 					enconded_message += packet
+					try:
+						message = pickle.loads(enconded_message)
+						receiving = False
+					except:
+						continue
 
-			message = pickle.loads(enconded_message)
-			if 'key' in message and 'type' in message and 'time_stamp' in message and 'data' in message and (message['key'] == self.__PrivateKey or message['key'] == self.__PublicKey):
+			if isinstance(message, dict) and 'key' in message and 'type' in message and 'time_stamp' in message and 'data' in message and (message['key'] == self.__PrivateKey or message['key'] == self.__PublicKey):
 				return message
 			else:
 				return None
-		except TimeoutError as e:
-			return e
+		except TimeoutError:
+			print('Message timeout')
+			return None
 		else:
 			return None			
 	
