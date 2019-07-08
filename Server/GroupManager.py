@@ -77,7 +77,7 @@ class GroupManager(Service):
 		else:
 			return 'Unable to connect'
 
-	def _UpdateGroup(self, group):
+	def _UpdateGroup(self, group, storage=None):
 		# Using mutex to update group
 		result = False
 		self.__GroupLock.acquire()
@@ -95,7 +95,7 @@ class GroupManager(Service):
 				self.__SaveGroup()
 				print('Group updated')
 				# Sending the new group to other devices
-				data = {'group': self._Group, 'storage': None}
+				data = {'group': self._Group, 'storage': storage}
 				self._GroupBroadcast(data, self._InviteMessage)
 		except:
 			result = False

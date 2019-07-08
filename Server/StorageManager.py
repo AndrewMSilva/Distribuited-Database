@@ -159,13 +159,20 @@ class StorageManager(GroupManager):
 		self.__SaveStorage()
 	
 	def _MergeStorage(self, storage, override=False):
-		# Merging storages
-		for address in range(0, len(storage)):
-			if storage[address]:
-				if override or (not override and self._Storage[address] is None):
+		self.__StorageLock.acquire()
+		try:
+			# Merging storages
+			changed = False
+			for address in range(0, len(storage)):
+				if storage[address] and (override or (not override and self._Storage[address] is None)):
 					self._Storage[address] = storage[address]
-		# Saving storage
-		self.__SaveStorage()
+					if not changed:
+						changed = True
+			# Saving storage
+			if changed:
+				self.__SaveStorage()
+		finally:
+			self.__StorageLock.release()
 
 	# META PAGE SECTION #
 

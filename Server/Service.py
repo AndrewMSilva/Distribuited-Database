@@ -11,7 +11,7 @@ class Service(object):
 	# Control settings
 	__Running = False
 	__Socket  = None
-	_Timeout 	  = 1
+	_Timeout  = 1
 	# Authentication settings
 	__PrivateKey = None
 	__PublicKey  = None

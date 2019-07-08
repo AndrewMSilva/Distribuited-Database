@@ -21,7 +21,7 @@ class Controller(StorageManager):
 			result = self.Execute(query)
 		elif private:
 			if message['type'] == self._InviteMessage:
-				old_group = self._UpdateGroup(message['data']['group'])
+				old_group = self._UpdateGroup(message['data']['group'], self._Storage)
 				if old_group:
 					if isinstance(message['data']['storage'], list):
 						self._MergeStorage(message['data']['storage'])
@@ -45,14 +45,6 @@ class Controller(StorageManager):
 			enconded_message = self._EncodeMessage(result, result, True)
 			conn.send(enconded_message)
 
-	def ExitGroup(self):
-		start_time = time.time()
-		old_group = self._ExitGroup()
-		if old_group:
-			self._RedistributeFiles(old_group, True)
-			self._ClearStorage()
-		return self.__Result(self.__SuccessStatus, start_time)
-
 	# Creating a result
 	def __Result(self, status, start_time, data=[]):
 		if not isinstance(data, list):
@@ -72,6 +64,14 @@ class Controller(StorageManager):
 		start_time = time.time()
 		result = self._Invite(ip, self._Storage)
 		return self.__Result(result, start_time)
+	
+	def ExitGroup(self):
+		start_time = time.time()
+		old_group = self._ExitGroup()
+		if old_group:
+			self._RedistributeFiles(old_group, True)
+			self._ClearStorage()
+		return self.__Result(self.__SuccessStatus, start_time)
 
 	# Executing a query
 	def Execute(self, query):
