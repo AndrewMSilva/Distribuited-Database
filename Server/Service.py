@@ -16,7 +16,7 @@ class Service(object):
 	__PrivateKey = None
 	__PublicKey  = None
 	# Message settings
-	__BufferLength = 12*1024
+	__BufferLength = 8*1024
 
 	def __init__(self, private_key, public_key):
 		# Hashing keys
@@ -90,7 +90,15 @@ class Service(object):
 	# Receiving and authenticating a message
 	def _Receive(self, conn):
 		try:
-			enconded_message = conn.recv(self.__BufferLength)
+			receiving = True
+			enconded_message = b''
+			while receiving:
+				packet = conn.recv(self.__BufferLength)
+				if not packet:
+					receiving = False
+				else:
+					enconded_message += packet
+
 			message = pickle.loads(enconded_message)
 			if 'key' in message and 'type' in message and 'time_stamp' in message and 'data' in message and (message['key'] == self.__PrivateKey or message['key'] == self.__PublicKey):
 				return message
