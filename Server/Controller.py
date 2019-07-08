@@ -24,7 +24,7 @@ class Controller(StorageManager):
 				old_group = self._UpdateGroup(message['data']['group'])
 				if old_group:
 					if isinstance(message['data']['storage'], list):
-						self._OverrideStorage(message['data']['storage'])
+						self._MergeStorage(message['data']['storage'])
 					self._RedistributeFiles(old_group)
 			elif message['type'] == self._ExitMessage:
 				self._RemoveFromGroup(message['data'])

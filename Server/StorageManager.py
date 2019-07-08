@@ -158,8 +158,13 @@ class StorageManager(GroupManager):
 		self._Storage = [None]*self._Addressement
 		self.__SaveStorage()
 	
-	def _OverrideStorage(self, storage):
-		self._Storage = storage.copy()
+	def _MergeStorage(self, storage, override=False):
+		# Merging storages
+		for address in range(0, len(storage)):
+			if storage[address]:
+				if override or (not override and self._Storage[address] is None):
+					self._Storage[address] = storage[address]
+		# Saving storage
 		self.__SaveStorage()
 
 	# META PAGE SECTION #
